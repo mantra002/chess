@@ -4,34 +4,28 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace chess_app
+namespace Chess
 {
+    using Chess.Management;
+    using Chess.Game;
     class Program
     {
         static void Main(string[] args)
         {
-            Board g = new Board();
-            Random r = new Random();
-            List<Move> cms;
-            int counter = 0;
-            System.Diagnostics.Stopwatch t = new System.Diagnostics.Stopwatch();
-            t.Start();
-            while (counter < 250000)
+            string textMove;
+            GameManager gm = new GameManager();
+            //gm.RunPerft(4);
+            for(int i = 0; i < 80; i++)
             {
-                cms = MoveGeneration.GenerateLegalMoves(g);
-                if (cms.Count() == 0)
-                {
-                    g = new Board();
-                    cms = MoveGeneration.GenerateLegalMoves(g);
-                }
-                int i = r.Next(0, cms.Count());
-                //Console.WriteLine("Playing " + cms[i].ToString());
-                g.PlayMove(cms[i]);
-                counter++;
+                gm.GenerateAndPlayRandomMove();
+                gm.PrintBoard();
+                Console.Write("Move? : ");
+                textMove = Console.ReadLine();
+                if (textMove.ToUpper() == "UNDO") gm.UnplayMoves(2);
+                else gm.PlayMove(textMove);
+                gm.PrintBoard();
             }
-            t.Stop();
-            Console.WriteLine(250000 / (t.ElapsedMilliseconds/1000.0) + " moves/second");
-            Console.ReadLine();
+            
         }
     }
 }

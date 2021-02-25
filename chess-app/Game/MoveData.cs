@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace chess_app
+namespace Chess.Game
 {
     static class MoveData
     {
@@ -110,7 +110,7 @@ namespace chess_app
         {
             square = ConvertRealSquareToDummyBoard(square);
             List<short> availibleMoves = new List<short>();
-            short resultDummySquare, realSquare;
+            short resultDummySquare;
             foreach(MoveDirections moveOffset in moves)
             {
                 resultDummySquare = (short)(square + (short)moveOffset);
@@ -120,29 +120,17 @@ namespace chess_app
                     availibleMoves.Add(ConvertDummyBoardToRealSquare(resultDummySquare));
                 }
             }
-            if(pawn && ValidBoardPositions[square])
-            {
-                realSquare = ConvertDummyBoardToRealSquare(square);
-                if(Board.GetRank((byte)realSquare) == 7 && !white)
-                {
-                    availibleMoves.Add(ConvertDummyBoardToRealSquare((short)(square + (short)MoveDirections.Down * 2)));
-                }
-                if (Board.GetRank((byte)realSquare) == 2 && white)
-                {
-                    availibleMoves.Add(ConvertDummyBoardToRealSquare((short)(square + (short)MoveDirections.Up * 2)));
-                }
-
-            }
             return availibleMoves.ToArray();
         }
 
-        public static short[] GenerateSlidingMoves(MoveDirections[] moves, short square, Board b = null)
+        public static short[] GenerateSlidingMoves(MoveDirections[] moves, short square, Board b = null, short considerSquareEmpty = -1)
         {
             square = ConvertRealSquareToDummyBoard(square);
             List<short> availibleMoves = new List<short>();
             short resultDummySquare;
             short destinationPiece;
             short realSquare=0;
+
             foreach (MoveDirections moveOffset in moves)
             {
                 resultDummySquare = (short)(square + (short)moveOffset);
@@ -153,7 +141,7 @@ namespace chess_app
                     {
                         destinationPiece = b.GameBoard[realSquare];
                         availibleMoves.Add(realSquare);
-                        if (destinationPiece != 0) break;
+                        if (destinationPiece != 0 && realSquare != considerSquareEmpty) break;
                     }
                     else
                     {

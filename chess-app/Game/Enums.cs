@@ -4,15 +4,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace chess_app
+namespace Chess.Game
 {
     public static class Enums
     {
-        public enum CastellingTypes : byte 
+        public enum CastleFlags : byte //White Short - White Long - Black Short - Black Long
         {
-            ShortCastle,
-            LongCastle,
-            None
+            WhiteShortCastle = 0b1000,
+            WhiteLongCastle = 0b0100,
+            BlackShortCastle = 0b0010,
+            BlackLongCastle = 0b0001,
+            None = 0b10000,
         }
         public enum PieceNames : byte
         {

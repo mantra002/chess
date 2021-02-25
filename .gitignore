@@ -348,3 +348,27 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+reference/AI/AISettings.cs
+reference/AI/Evaluation.cs
+reference/AI/MoveOrdering.cs
+reference/AI/Search.cs
+reference/AIPlayer.cs
+reference/BitBoardUtility.cs
+reference/Board.cs
+reference/BoardRepresentation.cs
+reference/Clock.cs
+reference/Coord.cs
+reference/FenUtility.cs
+reference/GameManager.cs
+reference/HumanPlayer.cs
+reference/Move.cs
+reference/MoveGenerator.cs
+reference/Piece.cs
+reference/PieceList.cs
+reference/PieceSquareTable.cs
+reference/Player.cs
+reference/PrecomputedMoveData.cs
+reference/PseudoLegalMoveGenerator.cs
+reference/TranspositionTable.cs
+reference/Zobrist.cs
+/chess-app/ChessLib

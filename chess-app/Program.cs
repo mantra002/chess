@@ -14,8 +14,12 @@ namespace Chess
         {
             string textMove;
             GameManager gm = new GameManager();
-            //gm.RunPerft(4);
-            for(int i = 0; i < 80; i++)
+            
+
+            gm.PlayMove(new Move("b1a3", gm.Board));
+            gm.PerftDivided(2);
+            Console.ReadKey();
+            /*for(int i = 0; i < 80; i++)
             {
                 gm.GenerateAndPlayRandomMove();
                 gm.PrintBoard();
@@ -24,8 +28,8 @@ namespace Chess
                 if (textMove.ToUpper() == "UNDO") gm.UnplayMoves(2);
                 else gm.PlayMove(textMove);
                 gm.PrintBoard();
-            }
-            
+            }*/
+
         }
     }
 }

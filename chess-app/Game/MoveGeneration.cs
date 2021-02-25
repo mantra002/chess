@@ -61,7 +61,7 @@ namespace Chess.Game
                         if ((decodePiece & (byte)PieceNames.Pawn) == (byte)PieceNames.Pawn && b.ColorToMove == Colors.White)
                         {
                             pawnMoves = MoveData.AvailiblePawnMovesWhite[decodeLocation];
-                            if (Board.GetRank((byte)decodeLocation) == 2 && b.GameBoard[decodeLocation - 16] == 0)
+                            if (Board.GetRank((byte)decodeLocation) == 2 && b.GameBoard[decodeLocation - 8] == 0)
                             {
                                 pawnMoves = pawnMoves.Concat(new short[] { (short)(decodeLocation - 16)}).ToArray();
                             }
@@ -72,7 +72,7 @@ namespace Chess.Game
                         else if ((decodePiece & (byte)PieceNames.Pawn) == (byte)PieceNames.Pawn && b.ColorToMove == Colors.Black)
                         {
                             pawnMoves = MoveData.AvailiblePawnMovesBlack[decodeLocation];
-                            if (Board.GetRank((byte)decodeLocation) == 7 && b.GameBoard[decodeLocation + 16] == 0 )
+                            if (Board.GetRank((byte)decodeLocation) == 7 && b.GameBoard[decodeLocation + 8] == 0 )
                             {
                                 pawnMoves = pawnMoves.Concat(new short[] { (short)(decodeLocation + 16) }).ToArray();
                             }

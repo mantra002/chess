@@ -99,6 +99,7 @@ namespace Chess.Game
             f1 = 61,
             g1 = 62,
             h1 = 63,
+            None
         }
 
     }

@@ -13,16 +13,18 @@ namespace Chess.Game
         public byte[] GameBoard = new byte[64];
         public Colors ColorToMove = Colors.White;
         public byte CastleMask = 0b1111; //White Short - White Long - Black Short - Black Long
-        public ushort EnPassantOkMask = 0;
+        public Squares EnPassantTarget = Squares.None;
         public bool InCheck = false;
         public bool CheckMate = false;
-        public List<ushort> PieceList = new List<ushort>(); //Forammatted as 0bLLLLLLLLPPPPPPCC L = Location; P = Piece; C = Color
+        public List<ushort> PieceList = new List<ushort>(); //Formmatted as 0bLLLLLLLLPPPPPPCC L = Location; P = Piece; C = Color
         public Stack<Move> GameHistory = new Stack<Move>();
+        public Stack<List<ushort>[][]> AttackedSquaresHistory = new Stack<List<ushort>[][]>();
         public List<ushort>[][] AttackedSquares = new List<ushort>[2][];
         public byte[] KingSquares = new byte[2];
         private byte castleMaskAtCastleWhite;
         private byte castleMaskAtCastleBlack;
         public short Ply = 0;
+        public byte FiftyMoveCounter = 0; //In Ply
        
 
         public Board(string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
@@ -39,6 +41,7 @@ namespace Chess.Game
         }
         public void RemovePiece(byte piece, byte location, int index = -1)
         {
+            //This method doesn't work because the piece list is being changed with every remove or add.
             //if(index != -1) PieceList.RemoveAt(index);
             //else 
             if(piece != 0) PieceList.Remove(EncodePieceForPieceList(piece, location));
@@ -47,6 +50,7 @@ namespace Chess.Game
 
         public void PlayMove(Move move)
         {
+            if (CheckMate) return;
             Ply++;
             if (move.CastleFlags == CastleFlags.None)
             {
@@ -83,7 +87,8 @@ namespace Chess.Game
                 }
                 if (move.PromoteIntoPiece != 0)
                 {
-                    //Need to handle this
+                    RemovePiece(move.Piece, move.Origin, move.PieceListIndex);
+                    AddPiece(move.PromoteIntoPiece, move.Destination);
                 }
                 else
                 {
@@ -92,7 +97,12 @@ namespace Chess.Game
                 }
                 if (move.PieceCaptured != 0)
                 {
-                    PieceList.Remove(EncodePieceForPieceList(move.PieceCaptured, move.Destination));
+                    if (!move.CaptureEnPassant) PieceList.Remove(EncodePieceForPieceList(move.PieceCaptured, move.Destination));
+                    else
+                    {
+                        if(move.SideToMove == Colors.White) RemovePiece(move.PieceCaptured, (byte)(move.Destination+8));
+                        else RemovePiece(move.PieceCaptured, (byte)(move.Destination - 8));
+                    }
                 }
               
             }
@@ -148,7 +158,9 @@ namespace Chess.Game
                 //InCheck = AttackedSquares[1][KingSquares[0]];
                 ColorToMove = Colors.White;
             }
+            EnPassantTarget = move.AllowsEnPassantTarget;
             GameHistory.Push(move);
+            AttackedSquaresHistory.Push(AttackedSquares);
         }
 
         public void UndoMove(Move move)
@@ -195,7 +207,8 @@ namespace Chess.Game
                 AddPiece(move.PieceCaptured, move.Destination);
                 if (move.PromoteIntoPiece != 0)
                 {
-                    //Need to implement promotion
+                    AddPiece(move.Piece, move.Origin);
+                    RemovePiece(move.PromoteIntoPiece, move.Destination);
                 }
                 else
                 {
@@ -239,35 +252,26 @@ namespace Chess.Game
                     AddPiece(Pieces.EncodePiece(PieceNames.Rook, Colors.Black), (byte)Squares.a8);
                 }
             }
-            this.AttackedSquares[2 - (byte)ColorToMove] = null;
 
             if (ColorToMove == Colors.White) ColorToMove = Colors.Black;
             else ColorToMove = Colors.White;
 
             GameHistory.Pop();
+            AttackedSquares = AttackedSquaresHistory.Pop();
         }
 
-        public void LoadFEN(string fen)
+        private void LoadFEN(string fen)
         {
             byte boardIndex = 0;
-            int index = 0;
-            char c;
-            bool allPiecesDone = false;
-            bool castlingDone = false;
-
+            string[] splitFen = fen.Split(' ');
 
             ClearBoard();
-            
-            while (!allPiecesDone)
+            //Setup pieces
+            foreach (char c in splitFen[0].Trim())
             {
-                c = fen[index];
                 if (c != '/')
                 {
-                    if (c == ' ')
-                    {
-                        allPiecesDone = true;
-                    }
-                    else if (Char.IsDigit(c))
+                    if (Char.IsDigit(c))
                     {
                         boardIndex += (byte) (c - '0');
                     }
@@ -276,9 +280,9 @@ namespace Chess.Game
                         AddPiece(Pieces.EncodePieceFromChar(c), boardIndex++);
                     }
                 }
-                index++;
             }
-            if (fen[index] == 'w')
+            //Determine side to move
+            if (splitFen[1].Trim() == "w")
             {
                 ColorToMove = Colors.White;
             }
@@ -286,16 +290,10 @@ namespace Chess.Game
             {
                 ColorToMove = Colors.Black;
             }
-            index++;
-            while (!castlingDone)
+            //Castling rights
+            if(splitFen[2].Trim() != "-")
             {
-                c = fen[index];
-
-                if (c == ' ')
-                {
-                    castlingDone = true;
-                }
-                else
+                foreach (char c in splitFen[2].Trim())
                 {
                     switch (c)
                     {
@@ -313,8 +311,22 @@ namespace Chess.Game
                             break;
                     }
                 }
-                
             }
+            //Enpassant
+
+            if (splitFen[3].Trim() != "-")
+            {
+                EnPassantTarget = (Squares)Enum.Parse(typeof(Squares), splitFen[3].Trim(), true);
+            }
+
+            //50 Move Timer
+            if (splitFen.Length > 5 && splitFen[4].Trim() != "")
+            {
+                this.FiftyMoveCounter = byte.Parse(splitFen[4].Trim());
+            }
+
+
+
             this.AttackedSquares[0] = MoveGeneration.GenerateAttackMap(this, Colors.Black);
             this.AttackedSquares[1] = MoveGeneration.GenerateAttackMap(this, Colors.White);
         }
@@ -329,10 +341,15 @@ namespace Chess.Game
             GameBoard = new byte[64];
             PieceList = new List<ushort>();
             CastleMask = 0;
-            EnPassantOkMask = 0;
+            EnPassantTarget = Squares.None;
             castleMaskAtCastleBlack = 0;
             castleMaskAtCastleWhite = 0;
             Ply = 0;
+            GameHistory.Clear();
+            AttackedSquaresHistory.Clear();
+            InCheck = false;
+            CheckMate = false;
+            FiftyMoveCounter = 0;
         }
 
         public override string ToString()

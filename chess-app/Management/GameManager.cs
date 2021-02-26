@@ -51,7 +51,7 @@ namespace Chess.Management
             GameManager gm = new GameManager();
             long count;
             sw.Start();
-            for (int i = 0; i < depth; i++)
+            for (int i = 0; i < depth+1; i++)
             {
                 count = gm.Perft(i);
                 Console.WriteLine("Perft result depth: " + i + " Result: " + count + " Time: " + sw.ElapsedMilliseconds + "ms kN/S: " + Math.Round((double)count/(sw.ElapsedMilliseconds)).ToString());
@@ -69,7 +69,7 @@ namespace Chess.Management
 
             for (int i = 0; i < numberOfMoves; i++)
             {
-                Console.WriteLine(moves[i].ToString().PadLeft(10 - depth));
+                //Console.WriteLine(moves[i].ToString().PadLeft(10 - depth));
                 this.Board.PlayMove(moves[i]);
                 nodes += Perft(depth - 1);
                 this.Board.UndoMove(moves[i]);
@@ -80,15 +80,19 @@ namespace Chess.Management
         public long PerftDivided(int depth)
         {
             long nodes = 0;
+            long totalNodes = 0;
             List<Move> moves = MoveGeneration.GenerateLegalMoves(this.Board);
+            if (moves.Count() == 0) Console.WriteLine("Checkmate!");
             foreach(Move m in moves)
             {
                 nodes = 0;
                 this.Board.PlayMove(m);
                 nodes += Perft(depth - 1);
+                totalNodes += nodes;
                 this.Board.UndoMove(m);
                 Console.WriteLine(m.ToString() + ": " + nodes);
             }
+            Console.WriteLine("Depth " + depth + "    Count: " + totalNodes);
             return nodes;
         }
     }

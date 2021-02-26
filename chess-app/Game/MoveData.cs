@@ -10,6 +10,16 @@ namespace Chess.Game
     {
         //Need a way to generate the index offsets for pieces
 
+        public readonly static FakeMoveDirections[] FPawnMovesWhite = { FakeMoveDirections.Up };
+        public readonly static FakeMoveDirections[] FPawnMovesBlack = { FakeMoveDirections.Down };
+        public readonly static FakeMoveDirections[] FPawnAttacksWhite = { FakeMoveDirections.UpLeft, FakeMoveDirections.UpRight };
+        public readonly static FakeMoveDirections[] FPawnAttacksBlack = { FakeMoveDirections.DownLeft, FakeMoveDirections.DownRight };
+        public readonly static FakeMoveDirections[] FKnightMoves = { FakeMoveDirections.DownLeft2, FakeMoveDirections.DownRight2, FakeMoveDirections.TwoDownLeft, FakeMoveDirections.TwoDownRight, FakeMoveDirections.UpLeft2, FakeMoveDirections.UpRight2, FakeMoveDirections.TwoUpLeft, FakeMoveDirections.TwoUpRight };
+        public readonly static FakeMoveDirections[] FBishopMoves = { FakeMoveDirections.UpLeft, FakeMoveDirections.UpRight, FakeMoveDirections.DownLeft, FakeMoveDirections.DownRight };
+        public readonly static FakeMoveDirections[] FRookMoves = { FakeMoveDirections.Up, FakeMoveDirections.Down, FakeMoveDirections.Left, FakeMoveDirections.Right };
+        public readonly static FakeMoveDirections[] FKingMoves = { FakeMoveDirections.UpLeft, FakeMoveDirections.UpRight, FakeMoveDirections.DownLeft, FakeMoveDirections.DownRight, FakeMoveDirections.Up, FakeMoveDirections.Down, FakeMoveDirections.Left, FakeMoveDirections.Right };
+        public readonly static FakeMoveDirections[] FQueenMoves = FKingMoves;
+
         public readonly static MoveDirections[] PawnMovesWhite = { MoveDirections.Up };
         public readonly static MoveDirections[] PawnMovesBlack = { MoveDirections.Down };
         public readonly static MoveDirections[] PawnAttacksWhite = { MoveDirections.UpLeft, MoveDirections.UpRight };
@@ -31,10 +41,39 @@ namespace Chess.Game
         public readonly static short[][] AvailibleKingMoves;
         public readonly static short[][] AvailibleQueenMoves;
 
-        public enum MoveDirections : short
+        public readonly static short[][] DistanceToEdgeUp;
+        public readonly static short[][] DistanceToEdgeDown;
+        public readonly static short[][] DistanceToEdgeRight;
+        public readonly static short[][] DistanceToEdgeLeft;
+        public readonly static short[][] DistanceToEdgeUpRight;
+        public readonly static short[][] DistanceToEdgeUpLeft;
+        public readonly static short[][] DistanceToEdgeDownRight;
+        public readonly static short[][] DistanceToEdgeDownLeft;
+
+        public enum FakeMoveDirections : short
         {
             Up = -14,
             Down = 14,
+            Left = -1,
+            Right = 1,
+            UpLeft = Up + Left,
+            UpRight = Up + Right,
+            DownLeft = Down + Left,
+            DownRight = Down + Right,
+            TwoUpLeft = Up + Up + Left,
+            TwoUpRight = Up + Up + Right,
+            UpRight2 = Up + Right + Right,
+            UpLeft2 = Up + Left + Left,
+            TwoDownLeft = Down + Down + Left,
+            TwoDownRight = Down + Down + Right,
+            DownRight2 = Down + Right + Right,
+            DownLeft2 = Down + Left + Left
+        }
+
+        public enum MoveDirections : short
+        {
+            Up = -8,
+            Down = 8,
             Left = -1,
             Right = 1,
             UpLeft = Up + Left,
@@ -64,20 +103,33 @@ namespace Chess.Game
             AvailibleKingMoves = new short[64][];
             AvailibleQueenMoves = new short[64][];
 
+            DistanceToEdgeUp = new short[64][];
+            DistanceToEdgeDown = new short[64][];
+            DistanceToEdgeRight = new short[64][];
+            DistanceToEdgeLeft = new short[64][];
+            DistanceToEdgeUpRight = new short[64][];
+            DistanceToEdgeUpLeft = new short[64][];
+            DistanceToEdgeDownRight = new short[64][];
+            DistanceToEdgeDownLeft = new short[64][];
+
             GenerateValidBoardPositions();
 
             for (short i = 0; i < 64; i++)
             {
-                AvailiblePawnMovesWhite[i] = GenerateNonSlidingMoves(PawnMovesWhite, i, true, true);
-                AvailiblePawnMovesBlack[i] = GenerateNonSlidingMoves(PawnMovesBlack, i, false, true);
-                AvailiblePawnAttacksWhite[i] = GenerateNonSlidingMoves(PawnAttacksWhite, i);
-                AvailiblePawnAttacksBlack[i] = GenerateNonSlidingMoves(PawnAttacksBlack, i);
-                AvailibleBishopMoves[i] = GenerateSlidingMoves(BishopMoves, i);
-                AvailibleRookMoves[i] = GenerateSlidingMoves(RookMoves, i);
-                AvailibleKnightMoves[i] = GenerateNonSlidingMoves(KnightMoves, i);
-                AvailibleKingMoves[i] = GenerateNonSlidingMoves(KingMoves, i);
-                AvailibleQueenMoves[i] = GenerateNonSlidingMoves(QueenMoves, i);
+                AvailiblePawnMovesWhite[i] = GenerateNonSlidingMoves(FPawnMovesWhite, i, true, true);
+                AvailiblePawnMovesBlack[i] = GenerateNonSlidingMoves(FPawnMovesBlack, i, false, true);
+                AvailiblePawnAttacksWhite[i] = GenerateNonSlidingMoves(FPawnAttacksWhite, i);
+                AvailiblePawnAttacksBlack[i] = GenerateNonSlidingMoves(FPawnAttacksBlack, i);
+                AvailibleBishopMoves[i] = GenerateSlidingMoves(FBishopMoves, i);
+                AvailibleRookMoves[i] = GenerateSlidingMoves(FRookMoves, i);
+                AvailibleKnightMoves[i] = GenerateNonSlidingMoves(FKnightMoves, i);
+                AvailibleKingMoves[i] = GenerateNonSlidingMoves(FKingMoves, i);
+                AvailibleQueenMoves[i] = GenerateSlidingMoves(FQueenMoves, i);
             }
+        }
+        static void GenerateDistanceTable(MoveDirections d, short index)
+        {
+
         }
         static void GenerateValidBoardPositions()
         {
@@ -106,12 +158,12 @@ namespace Chess.Game
             return (short)(realBoardIndex + 45 + (6 * (realBoardIndex / 8)));
         }
 
-        private static short[] GenerateNonSlidingMoves(MoveDirections[] moves, short square, bool white = true, bool pawn = false)
+        private static short[] GenerateNonSlidingMoves(FakeMoveDirections[] moves, short square, bool white = true, bool pawn = false)
         {
             square = ConvertRealSquareToDummyBoard(square);
             List<short> availibleMoves = new List<short>();
             short resultDummySquare;
-            foreach(MoveDirections moveOffset in moves)
+            foreach(FakeMoveDirections moveOffset in moves)
             {
                 resultDummySquare = (short)(square + (short)moveOffset);
 
@@ -123,7 +175,7 @@ namespace Chess.Game
             return availibleMoves.ToArray();
         }
 
-        public static short[] GenerateSlidingMoves(MoveDirections[] moves, short square, Board b = null, short considerSquareEmpty = -1)
+        public static short[] GenerateSlidingMoves(FakeMoveDirections[] moves, short square, Board b = null, short considerSquareEmpty = -1)
         {
             square = ConvertRealSquareToDummyBoard(square);
             List<short> availibleMoves = new List<short>();
@@ -131,7 +183,7 @@ namespace Chess.Game
             short destinationPiece;
             short realSquare=0;
 
-            foreach (MoveDirections moveOffset in moves)
+            foreach (FakeMoveDirections moveOffset in moves)
             {
                 resultDummySquare = (short)(square + (short)moveOffset);
                 while (ValidBoardPositions[resultDummySquare])

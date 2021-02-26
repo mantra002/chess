@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace Chess.Game
 {
+    using static Enums;
     public class Move
     {
         public byte Piece { get; set; }
@@ -13,14 +14,14 @@ namespace Chess.Game
         public byte PieceCaptured { get; set; }
         public byte Origin { get; set; }
         public byte Destination { get; set; }
-
+        public bool CaptureEnPassant { get; set; }
         public byte PromoteIntoPiece { get; set; }
 
-        public Enums.CastleFlags CastleFlags { get; set; }
-        public Enums.Colors SideToMove { get; set; }
-        public bool AllowsEnPassant { get; set; }
+        public CastleFlags CastleFlags { get; set; }
+        public Colors SideToMove { get; set; }
+        public Squares AllowsEnPassantTarget { get; set; }
 
-        public Move(Enums.Colors sideToPlay, byte piece, byte origin, byte destination, int pieceListIndex, byte pieceCaptured = 0, Enums.CastleFlags castleFlag = Enums.CastleFlags.None, bool allowEnPassant = false, byte promoteIntoPiece = 0)
+        public Move(Colors sideToPlay, byte piece, byte origin, byte destination, int pieceListIndex=-1, byte pieceCaptured = 0, CastleFlags castleFlag = CastleFlags.None, Squares allowsEnPassantTarget = Squares.None, byte promoteIntoPiece = 0)
         {
             Piece = piece;
             Origin = origin;
@@ -31,44 +32,78 @@ namespace Chess.Game
             PieceCaptured = pieceCaptured;
             PromoteIntoPiece = promoteIntoPiece;
 
-            AllowsEnPassant = allowEnPassant;
+            AllowsEnPassantTarget = allowsEnPassantTarget;
             PieceListIndex = pieceListIndex;
+            CaptureEnPassant = false;
         }
 
         public Move(string move, Board b)
         {
             (Origin, Destination) = GetSquaresFromString(move);
-            
             Piece = b.GameBoard[Origin];
+
+            
             SideToMove = b.ColorToMove;
-            CastleFlags = Enums.CastleFlags.None;
-            if(SideToMove == Enums.Colors.White)
+            if (Destination == (byte)b.EnPassantTarget)
+            {
+                PieceListIndex = b.PieceList.IndexOf(Board.EncodePieceForPieceList(PieceCaptured, Destination));
+                CaptureEnPassant = true;
+                if (SideToMove == Colors.White)
+                {
+                    PieceCaptured = b.GameBoard[Destination + 8];
+                }
+                else PieceCaptured = b.GameBoard[Destination - 8];
+            }
+            else
+            {
+                PieceListIndex = b.PieceList.IndexOf(Board.EncodePieceForPieceList(PieceCaptured, Destination));
+                CaptureEnPassant = false;
+                PieceCaptured = b.GameBoard[Destination];
+            }
+            CastleFlags = CastleFlags.None;
+            if(SideToMove == Colors.White)
             {
                 if (Origin == 255)
                 {
-                    CastleFlags = Enums.CastleFlags.WhiteShortCastle;
+                    CastleFlags = CastleFlags.WhiteShortCastle;
                 }
                 else if (Origin == 254)
                 {
-                    CastleFlags = Enums.CastleFlags.WhiteLongCastle;
+                    CastleFlags = CastleFlags.WhiteLongCastle;
                 }
             }
             else
             {
                 if (Origin == 255)
                 {
-                    CastleFlags = Enums.CastleFlags.BlackShortCastle;
+                    CastleFlags = CastleFlags.BlackShortCastle;
                 }
                 else if (Origin == 254)
                 {
-                    CastleFlags = Enums.CastleFlags.BlackLongCastle;
+                    CastleFlags = CastleFlags.BlackLongCastle;
                 }
             }
   
-            PieceCaptured = b.GameBoard[Destination];
+            
             PromoteIntoPiece = 0; //not implemented
-            AllowsEnPassant = false; //not implemented
-            PieceListIndex = b.PieceList.IndexOf(Board.EncodePieceForPieceList(PieceCaptured, Destination));
+            if((Piece & (byte) PieceNames.Pawn) == (byte)PieceNames.Pawn)
+            {
+                if(Origin - Destination == 16)
+                {
+                    AllowsEnPassantTarget = (Squares)(Origin-8); 
+                }
+                else if(Origin - Destination == -16)
+                {
+                    AllowsEnPassantTarget = (Squares)(Origin + 8);
+                }
+                else
+                {
+                    AllowsEnPassantTarget = Squares.None;
+                }
+
+            }
+            
+
         }
         public static (byte, byte) GetSquaresFromString(string move)
         {
@@ -82,7 +117,7 @@ namespace Chess.Game
             }
             string origin = move.Substring(0, 2);
             string destination = move.Substring(2, 2);
-            Enums.Squares originS, destinationS;
+            Squares originS, destinationS;
             Enum.TryParse(origin, out originS);
             Enum.TryParse(destination, out destinationS);
 
@@ -90,8 +125,8 @@ namespace Chess.Game
         }
         public override string ToString()
         {
-            if (CastleFlags == Enums.CastleFlags.None) return Board.BoardIndexToString(this.Origin) + Board.BoardIndexToString(this.Destination);
-            else if (CastleFlags == Enums.CastleFlags.BlackShortCastle || CastleFlags == Enums.CastleFlags.WhiteShortCastle) return "O-O";
+            if (CastleFlags == CastleFlags.None) return Board.BoardIndexToString(this.Origin) + Board.BoardIndexToString(this.Destination);
+            else if (CastleFlags == CastleFlags.BlackShortCastle || CastleFlags == CastleFlags.WhiteShortCastle) return "O-O";
             else return "O-O-O";
         }
     }

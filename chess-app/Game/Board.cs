@@ -19,7 +19,10 @@ namespace Chess.Game
         public List<ushort> PieceList = new List<ushort>(); //Formmatted as 0bLLLLLLLLPPPPPPCC L = Location; P = Piece; C = Color
         public Stack<Move> GameHistory = new Stack<Move>();
         public Stack<List<ushort>[][]> AttackedSquaresHistory = new Stack<List<ushort>[][]>();
+        public Stack<List<ushort>[][]> AttackedSquaresWithoutPinsHistory = new Stack<List<ushort>[][]>();
+        public Stack<byte> CastleMaskHistory = new Stack<byte>();
         public List<ushort>[][] AttackedSquares = new List<ushort>[2][];
+        public List<ushort>[][] AttackedSquaresWithoutPins = new List<ushort>[2][];
         public byte[] KingSquares = new byte[2];
         private byte castleMaskAtCastleWhite;
         private byte castleMaskAtCastleBlack;
@@ -51,7 +54,8 @@ namespace Chess.Game
         public void PlayMove(Move move)
         {
             if (CheckMate) return;
-            AttackedSquaresHistory.Push(AttackedSquares); 
+            AttackedSquaresHistory.Push(AttackedSquares);
+            AttackedSquaresWithoutPinsHistory.Push(AttackedSquaresWithoutPins);
             Ply++;
             GameHistory.Push(move);
          
@@ -82,13 +86,14 @@ namespace Chess.Game
                 {
                     if (move.Origin == (byte)Squares.a8)
                     {
-                        CastleMask = (byte)(CastleMask & 0b0010);
+                        CastleMask = (byte)(CastleMask & 0b1110);
                     }
                     else if (move.Origin == (byte)Squares.h8)
                     {
-                        CastleMask = (byte)(CastleMask & 0b0001);
+                        CastleMask = (byte)(CastleMask & 0b1101);
                     }
                 }
+                
                 if (move.PromoteIntoPiece != 0)
                 {
                     RemovePiece(move.Piece, move.Origin, move.PieceListIndex);
@@ -163,7 +168,8 @@ namespace Chess.Game
                 ColorToMove = Colors.White;
             }
             EnPassantTarget = move.AllowsEnPassantTarget;
-            
+            CastleMaskHistory.Push(CastleMask);
+
         }
 
         public void UndoMove(Move move)
@@ -173,45 +179,13 @@ namespace Chess.Game
             if (InCheck) InCheck = false;
             if (move.CastleFlags == CastleFlags.None)
             {
-                #region "Handle castling rights"
-                if ((byte)move.Piece == ((byte)PieceNames.King | (byte)Colors.White))
-                {
-                    CastleMask = (byte)(CastleMask & 0b0011);
-                }
-                else if ((byte)move.Piece == ((byte)PieceNames.Rook | (byte)Colors.White))
-                {
-                    if (move.Origin == (byte)Squares.a1)
-                    {
-                        CastleMask = (byte)(CastleMask & 0b0111);
-                    }
-                    else if (move.Origin == (byte)Squares.h1)
-                    {
-                        CastleMask = (byte)(CastleMask & 0b1011);
-                    }
-
-                }
-                else if ((byte)move.Piece == ((byte)PieceNames.King | (byte)Colors.Black))
-                {
-                    CastleMask = (byte)(CastleMask & 0b1100);
-                }
-                else if ((byte)move.Piece == ((byte)PieceNames.Rook | (byte)Colors.Black))
-                {
-                    if (move.Origin == (byte)Squares.a8)
-                    {
-                        CastleMask = (byte)(CastleMask & 0b0010);
-                    }
-                    else if (move.Origin == (byte)Squares.h8)
-                    {
-                        CastleMask = (byte)(CastleMask & 0b0001);
-                    }
-                }
-                #endregion
                 RemovePiece(move.Piece, move.Destination); //Remove the piece that's going
                 AddPiece(move.PieceCaptured, move.Destination);
                 if (move.PromoteIntoPiece != 0)
                 {
                     AddPiece(move.Piece, move.Origin);
                     RemovePiece(move.PromoteIntoPiece, move.Destination);
+                    AddPiece(move.PieceCaptured, move.Destination);
                 }
                 else
                 {
@@ -221,7 +195,6 @@ namespace Chess.Game
             }
             else if (move.SideToMove == Colors.White)
             {
-                CastleMask = (byte)(CastleMask | castleMaskAtCastleWhite);
                 if (move.CastleFlags == CastleFlags.WhiteShortCastle)
                 {
                     RemovePiece((byte)PieceNames.King | (byte)Colors.White, (byte)Squares.g1);
@@ -239,7 +212,6 @@ namespace Chess.Game
             }
             else
             {
-                CastleMask = (byte)(CastleMask | castleMaskAtCastleBlack);
                 if (move.CastleFlags == CastleFlags.BlackShortCastle)
                 {
                     RemovePiece((byte)PieceNames.King | (byte)Colors.Black, (byte)Squares.g8);
@@ -261,6 +233,8 @@ namespace Chess.Game
 
             EnPassantTarget = GameHistory.Pop().AllowsEnPassantTarget;
             AttackedSquares = AttackedSquaresHistory.Pop();
+            AttackedSquaresWithoutPins = AttackedSquaresWithoutPinsHistory.Pop();
+            CastleMask = CastleMaskHistory.Pop();
         }
 
         private void LoadFEN(string fen)
@@ -323,9 +297,9 @@ namespace Chess.Game
 
 
 
-            this.AttackedSquares[0] = MoveGeneration.GenerateAttackMap(this, Colors.Black);
-            this.AttackedSquares[1] = MoveGeneration.GenerateAttackMap(this, Colors.White);
-            this.AttackedSquares[0] = MoveGeneration.GenerateAttackMap(this, Colors.Black);
+            (this.AttackedSquares[0], this.AttackedSquaresWithoutPins[0]) = MoveGeneration.GenerateAttackMap(this, Colors.Black);
+            (this.AttackedSquares[1], this.AttackedSquaresWithoutPins[1]) = MoveGeneration.GenerateAttackMap(this, Colors.White);
+            (this.AttackedSquares[0], this.AttackedSquaresWithoutPins[0]) = MoveGeneration.GenerateAttackMap(this, Colors.Black);
 
             if (splitFen[1].Trim() == "w")
             {

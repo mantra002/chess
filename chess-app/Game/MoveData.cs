@@ -194,7 +194,7 @@ namespace Chess.Game
             return availibleMoves.ToArray();
         }
 
-        public static short[] GenerateSlidingMoves(FakeMoveDirections[] moves, short square, Board b = null, short considerSquareEmpty = -1)
+        public static short[] GenerateSlidingMoves(FakeMoveDirections[] moves, short square, Board b = null, short considerSquaresEmpty1 = -1, short considerSquaresEmpty2 = -1)
         {
             square = ConvertRealSquareToDummyBoard(square);
             List<short> availibleMoves = new List<short>();
@@ -212,7 +212,7 @@ namespace Chess.Game
                     {
                         destinationPiece = b.GameBoard[realSquare];
                         availibleMoves.Add(realSquare);
-                        if (destinationPiece != 0 && realSquare != considerSquareEmpty) break;
+                        if (destinationPiece != 0 && (realSquare != considerSquaresEmpty1 && realSquare != considerSquaresEmpty2)) break;
                     }
                     else
                     {

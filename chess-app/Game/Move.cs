@@ -79,7 +79,7 @@ namespace Chess.Game
             CastleFlags = CastleFlags.None;
             if(SideToMove == Colors.White)
             {
-                b.AttackedSquares[0] = MoveGeneration.GenerateAttackMap(b, Colors.Black);
+                //b.AttackedSquares[0] = MoveGeneration.GenerateAttackMap(b, Colors.Black);
                 
                 if (Origin == 255)
                 {
@@ -92,7 +92,7 @@ namespace Chess.Game
             }
             else
             {
-                b.AttackedSquares[1] = MoveGeneration.GenerateAttackMap(b, Colors.White);
+                //b.AttackedSquares[1] = MoveGeneration.GenerateAttackMap(b, Colors.White);
                 if (Origin == 255)
                 {
                     CastleFlags = CastleFlags.BlackShortCastle;

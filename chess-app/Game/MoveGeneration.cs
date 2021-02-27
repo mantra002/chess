@@ -120,6 +120,7 @@ namespace Chess.Game
             byte decodeDefender;
             byte decodePiecePl, decodeLocationPl;
 
+            //TODO: This sometimes returns moves that are in check.
             candidateMoves.AddRange(GenerateMoves(b, kingSquare, MoveData.AvailibleKingMoves[kingSquare], canBePinned: false, allowMoveIntoCheck: false));
 
             List<ushort> piecesAttacking = b.AttackedSquaresWithoutPins[opponentColor][kingSquare];
@@ -300,9 +301,11 @@ namespace Chess.Game
             byte decodeLocation;
             List<ushort>[] attackMap = new List<ushort>[64];
             List<ushort>[] attackMapWithoutPins = new List<ushort>[64];
+            
 
             if (sideToGenerateAttacksFor == 0) side = b.ColorToMove;
             else side = sideToGenerateAttacksFor;
+
             int numberOfPieces = b.PieceList.Count();
             for (int index = 0; index < numberOfPieces; index++)
             {

@@ -41,14 +41,7 @@ namespace Chess.Game
         public readonly static short[][] AvailibleKingMoves;
         public readonly static short[][] AvailibleQueenMoves;
 
-        public readonly static short[][] DistanceToEdgeUp;
-        public readonly static short[][] DistanceToEdgeDown;
-        public readonly static short[][] DistanceToEdgeRight;
-        public readonly static short[][] DistanceToEdgeLeft;
-        public readonly static short[][] DistanceToEdgeUpRight;
-        public readonly static short[][] DistanceToEdgeUpLeft;
-        public readonly static short[][] DistanceToEdgeDownRight;
-        public readonly static short[][] DistanceToEdgeDownLeft;
+        public readonly static byte[][] DistanceToEdge;
 
         public enum FakeMoveDirections : short
         {
@@ -89,6 +82,17 @@ namespace Chess.Game
             DownRight2 = Down + Right + Right,
             DownLeft2 = Down + Left + Left
         }
+        public enum MoveDirectionsIndex : short
+        {
+            Up,
+            Down,
+            Left,
+            Right,
+            UpLeft,
+            UpRight,
+            DownLeft,
+            DownRight
+        }
 
         static MoveData()
         {
@@ -103,19 +107,25 @@ namespace Chess.Game
             AvailibleKingMoves = new short[64][];
             AvailibleQueenMoves = new short[64][];
 
-            DistanceToEdgeUp = new short[64][];
-            DistanceToEdgeDown = new short[64][];
-            DistanceToEdgeRight = new short[64][];
-            DistanceToEdgeLeft = new short[64][];
-            DistanceToEdgeUpRight = new short[64][];
-            DistanceToEdgeUpLeft = new short[64][];
-            DistanceToEdgeDownRight = new short[64][];
-            DistanceToEdgeDownLeft = new short[64][];
+            DistanceToEdge = new byte[64][];
 
             GenerateValidBoardPositions();
 
+            Array fakeDirections = Enum.GetValues(typeof(FakeMoveDirections));
+
             for (short i = 0; i < 64; i++)
             {
+                DistanceToEdge[i] = new byte[8];
+                DistanceToEdge[i][(short)MoveDirectionsIndex.Up] = GenerateDistanceToEdge(FakeMoveDirections.Up, i);
+                DistanceToEdge[i][(short)MoveDirectionsIndex.Down] = GenerateDistanceToEdge(FakeMoveDirections.Down, i);
+                DistanceToEdge[i][(short)MoveDirectionsIndex.Left] = GenerateDistanceToEdge(FakeMoveDirections.Left, i);
+                DistanceToEdge[i][(short)MoveDirectionsIndex.Right] = GenerateDistanceToEdge(FakeMoveDirections.Right, i);
+
+                DistanceToEdge[i][(short)MoveDirectionsIndex.UpLeft] = GenerateDistanceToEdge(FakeMoveDirections.UpLeft, i);
+                DistanceToEdge[i][(short)MoveDirectionsIndex.UpRight] = GenerateDistanceToEdge(FakeMoveDirections.UpRight, i);
+                DistanceToEdge[i][(short)MoveDirectionsIndex.DownLeft] = GenerateDistanceToEdge(FakeMoveDirections.DownLeft, i);
+                DistanceToEdge[i][(short)MoveDirectionsIndex.DownRight] = GenerateDistanceToEdge(FakeMoveDirections.DownRight, i);
+
                 AvailiblePawnMovesWhite[i] = GenerateNonSlidingMoves(FPawnMovesWhite, i, true, true);
                 AvailiblePawnMovesBlack[i] = GenerateNonSlidingMoves(FPawnMovesBlack, i, false, true);
                 AvailiblePawnAttacksWhite[i] = GenerateNonSlidingMoves(FPawnAttacksWhite, i);
@@ -127,9 +137,18 @@ namespace Chess.Game
                 AvailibleQueenMoves[i] = GenerateSlidingMoves(FQueenMoves, i);
             }
         }
-        static void GenerateDistanceTable(MoveDirections d, short index)
+        static byte GenerateDistanceToEdge(FakeMoveDirections d, short index)
         {
-
+            short square = ConvertRealSquareToDummyBoard(index);
+            byte count = 0;
+            square = (short)(square + (short)d);
+            if (!ValidBoardPositions[square]) return 0;
+            while (ValidBoardPositions[square])
+            {
+                square = (short)(square + (short)d);
+                count++;
+            }
+            return count;
         }
         static void GenerateValidBoardPositions()
         {

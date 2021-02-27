@@ -143,7 +143,7 @@ namespace Chess.Test
                     Assert.AreEqual(1, perft);
                     break;
                 case 1:
-                    Assert.AreEqual(14, perft);
+                    Assert.AreEqual(44, perft);
                     break;
                 case 2:
                     Assert.AreEqual(1486, perft);

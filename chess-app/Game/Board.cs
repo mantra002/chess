@@ -51,7 +51,11 @@ namespace Chess.Game
         public void PlayMove(Move move)
         {
             if (CheckMate) return;
+            AttackedSquaresHistory.Push(AttackedSquares); 
             Ply++;
+            GameHistory.Push(move);
+         
+            
             if (move.CastleFlags == CastleFlags.None)
             {
                 if((byte)move.Piece == ((byte)PieceNames.King | (byte)Colors.White))
@@ -159,8 +163,7 @@ namespace Chess.Game
                 ColorToMove = Colors.White;
             }
             EnPassantTarget = move.AllowsEnPassantTarget;
-            GameHistory.Push(move);
-            AttackedSquaresHistory.Push(AttackedSquares);
+            
         }
 
         public void UndoMove(Move move)
@@ -256,7 +259,7 @@ namespace Chess.Game
             if (ColorToMove == Colors.White) ColorToMove = Colors.Black;
             else ColorToMove = Colors.White;
 
-            GameHistory.Pop();
+            EnPassantTarget = GameHistory.Pop().AllowsEnPassantTarget;
             AttackedSquares = AttackedSquaresHistory.Pop();
         }
 
@@ -282,14 +285,7 @@ namespace Chess.Game
                 }
             }
             //Determine side to move
-            if (splitFen[1].Trim() == "w")
-            {
-                ColorToMove = Colors.White;
-            }
-            else
-            {
-                ColorToMove = Colors.Black;
-            }
+            
             //Castling rights
             if(splitFen[2].Trim() != "-")
             {
@@ -329,6 +325,16 @@ namespace Chess.Game
 
             this.AttackedSquares[0] = MoveGeneration.GenerateAttackMap(this, Colors.Black);
             this.AttackedSquares[1] = MoveGeneration.GenerateAttackMap(this, Colors.White);
+            this.AttackedSquares[0] = MoveGeneration.GenerateAttackMap(this, Colors.Black);
+
+            if (splitFen[1].Trim() == "w")
+            {
+                ColorToMove = Colors.White;
+            }
+            else
+            {
+                ColorToMove = Colors.Black;
+            }
         }
 
         public void NewBoard(string fen)
@@ -389,6 +395,11 @@ namespace Chess.Game
         public static int GetRank(byte index)
         {
             return 8-(index / 8);
+        }
+
+        public static int GetFile(byte index)
+        {
+            return index % 8 + 1;
         }
 
         public static ushort EncodePieceForPieceList(byte piece, byte location)

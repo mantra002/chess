@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Chess.Game
 {
     using static Enums;
-    public class Move
+    public class Move : IComparable<Move>
     {
         public byte Piece { get; set; }
         public int PieceListIndex { get; set; }
@@ -21,7 +21,7 @@ namespace Chess.Game
         public Colors SideToMove { get; set; }
         public Squares AllowsEnPassantTarget { get; set; }
 
-        public Move(Colors sideToPlay, byte piece, byte origin, byte destination, int pieceListIndex=-1, byte pieceCaptured = 0, CastleFlags castleFlag = CastleFlags.None, Squares allowsEnPassantTarget = Squares.None, byte promoteIntoPiece = 0)
+        public Move(Colors sideToPlay, byte piece, byte origin, byte destination, int pieceListIndex=-1, byte pieceCaptured = 0, CastleFlags castleFlag = CastleFlags.None, Squares allowsEnPassantTarget = Squares.None, byte promoteIntoPiece = 0) 
         {
             Piece = piece;
             Origin = origin;
@@ -37,6 +37,22 @@ namespace Chess.Game
             CaptureEnPassant = false;
         }
 
+        public int SortByNameAscending(string name1, string name2)
+        {
+
+            return name1.CompareTo(name2);
+        }
+
+        // Default comparer for Part type.
+        public int CompareTo(Move comparePart)
+        {
+            // A null value means that this object is greater.
+            if (comparePart == null)
+                return 1;
+
+            else
+                return this.ToString().CompareTo(comparePart.ToString());
+        }
         public Move(string move, Board b)
         {
             (Origin, Destination) = GetSquaresFromString(move);
@@ -63,6 +79,8 @@ namespace Chess.Game
             CastleFlags = CastleFlags.None;
             if(SideToMove == Colors.White)
             {
+                b.AttackedSquares[0] = MoveGeneration.GenerateAttackMap(b, Colors.Black);
+                
                 if (Origin == 255)
                 {
                     CastleFlags = CastleFlags.WhiteShortCastle;
@@ -74,6 +92,7 @@ namespace Chess.Game
             }
             else
             {
+                b.AttackedSquares[1] = MoveGeneration.GenerateAttackMap(b, Colors.White);
                 if (Origin == 255)
                 {
                     CastleFlags = CastleFlags.BlackShortCastle;
@@ -125,7 +144,11 @@ namespace Chess.Game
         }
         public override string ToString()
         {
-            if (CastleFlags == CastleFlags.None) return Board.BoardIndexToString(this.Origin) + Board.BoardIndexToString(this.Destination);
+            if (CastleFlags == CastleFlags.None)
+            {
+                if (this.PromoteIntoPiece == 0) return Board.BoardIndexToString(this.Origin) + Board.BoardIndexToString(this.Destination);
+                else return Board.BoardIndexToString(this.Origin) + Board.BoardIndexToString(this.Destination) + Pieces.DecodePieceToChar(this.PromoteIntoPiece);
+            }
             else if (CastleFlags == CastleFlags.BlackShortCastle || CastleFlags == CastleFlags.WhiteShortCastle) return "O-O";
             else return "O-O-O";
         }

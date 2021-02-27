@@ -69,7 +69,7 @@ namespace Chess.Game
                             }
 
                             candidateMoves.AddRange(GenerateMoves(b, decodeLocation, MoveData.AvailiblePawnAttacksWhite[decodeLocation], index, true, false, isPawn: true));
-                            candidateMoves.AddRange(GenerateMoves(b, decodeLocation, pawnMoves, index, false));
+                            candidateMoves.AddRange(GenerateMoves(b, decodeLocation, pawnMoves, index, false, isPawn: true));
                         }
                         else if ((decodePiece & (byte)PieceNames.Pawn) == (byte)PieceNames.Pawn && b.ColorToMove == Colors.Black)
                         {
@@ -79,7 +79,7 @@ namespace Chess.Game
                                 pawnMoves = pawnMoves.Concat(new short[] { (short)(decodeLocation + 16) }).ToArray();
                             }
                             candidateMoves.AddRange(GenerateMoves(b, decodeLocation, MoveData.AvailiblePawnAttacksBlack[decodeLocation], index, true, false));
-                            candidateMoves.AddRange(GenerateMoves(b, decodeLocation, pawnMoves, index, false));
+                            candidateMoves.AddRange(GenerateMoves(b, decodeLocation, pawnMoves, index, false, isPawn: true));
                         }
                         else if ((decodePiece & (byte)PieceNames.Knight) == (byte)PieceNames.Knight)
                         {
@@ -91,15 +91,15 @@ namespace Chess.Game
                         }
                         else if ((decodePiece & (byte)PieceNames.Queen) == (byte)PieceNames.Queen)
                         {
-                            candidateMoves.AddRange(GenerateMoves(b, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.QueenMoves, decodeLocation, b), index));
+                            candidateMoves.AddRange(GenerateMoves(b, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FQueenMoves, decodeLocation, b), index));
                         }
                         else if ((decodePiece & (byte)PieceNames.Bishop) == (byte)PieceNames.Bishop)
                         {
-                            candidateMoves.AddRange(GenerateMoves(b, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.BishopMoves, decodeLocation, b), index));
+                            candidateMoves.AddRange(GenerateMoves(b, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FBishopMoves, decodeLocation, b), index));
                         }
                         else if ((decodePiece & (byte)PieceNames.Rook) == (byte)PieceNames.Rook)
                         {
-                            candidateMoves.AddRange(GenerateMoves(b, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.RookMoves, decodeLocation, b), index));
+                            candidateMoves.AddRange(GenerateMoves(b, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FRookMoves, decodeLocation, b), index));
                         }
                         else
                         {
@@ -117,6 +117,7 @@ namespace Chess.Game
             List<Move> candidateMoves = new List<Move>();
             Move m;
             byte decodeDefender;
+            byte decodePiecePl, decodeLocationPl;
 
             candidateMoves.AddRange(GenerateMoves(b, kingSquare, MoveData.AvailibleKingMoves[kingSquare], canBePinned: false, allowMoveIntoCheck: false));
 
@@ -132,7 +133,7 @@ namespace Chess.Game
             if (((decodePiece & (byte)PieceNames.Knight) != (byte)PieceNames.Knight) && ((decodePiece & (byte)PieceNames.Pawn) != (byte)PieceNames.Pawn))
             {
                 List<byte> blockingSquares = FindBlockingSquares(piecesAttacking[0], kingSquare);
-
+                int numberOfPieces = b.PieceList.Count();
                 foreach (byte bSquare in blockingSquares)
                 {
                     if (b.AttackedSquares[(byte)b.ColorToMove - 1][bSquare] != null)
@@ -140,25 +141,66 @@ namespace Chess.Game
                         foreach (ushort defendingPiece in b.AttackedSquares[(byte)b.ColorToMove - 1][bSquare])
                         {
                             decodeDefender = Board.DecodePieceFromPieceList(defendingPiece);
-                            if ((decodeDefender & (byte)PieceNames.King) != (byte)PieceNames.King)
+                            //Pawn attacks actually don't defend the king, their moves need to be checked.
+                            if ((decodeDefender & (byte)PieceNames.King) != (byte)PieceNames.King && (decodeDefender & (byte)PieceNames.Pawn) != (byte)PieceNames.Pawn)
                             {
                                 m = new Move(b.ColorToMove, decodeDefender, Board.DecodeLocationFromPieceList(defendingPiece), bSquare);
                                 candidateMoves.Add(m);
                             }
                         }
                     }
+
+                    //Need to check if a pawn can move into a bocking square
+                    short[] pawnMoves;
+                    for (int index = 0; index < numberOfPieces; index++)
+                    {
+                        ushort piece = b.PieceList[index];
+                        if ((piece & (byte)b.ColorToMove) == (byte)b.ColorToMove && (piece & (byte)PieceNames.Pawn) == (byte)PieceNames.Pawn)
+                        {
+                            decodePiecePl = Board.DecodePieceFromPieceList(piece);
+                            decodeLocationPl = Board.DecodeLocationFromPieceList(piece);
+
+                            if (b.ColorToMove == Colors.White)
+                            {
+                                pawnMoves = MoveData.AvailiblePawnMovesWhite[decodeLocationPl];
+                                if (Board.GetRank((byte)decodeLocationPl) == 2 && b.GameBoard[decodeLocationPl - 8] == 0)
+                                {
+                                    pawnMoves = pawnMoves.Concat(new short[] { (short)(decodeLocationPl - 16) }).ToArray();
+                                }
+                                if (pawnMoves.Contains(bSquare))
+                                {
+                                    candidateMoves.Add(GenerateMoves(b, decodeLocationPl, pawnMoves, index, false).Find(x => x.Destination == bSquare));
+                                }
+                            }
+                            else 
+                            {
+                                pawnMoves = MoveData.AvailiblePawnMovesBlack[decodeLocationPl];
+                                if (Board.GetRank((byte)decodeLocationPl) == 7 && b.GameBoard[decodeLocationPl + 8] == 0)
+                                {
+                                    pawnMoves = pawnMoves.Concat(new short[] { (short)(decodeLocationPl + 16) }).ToArray();
+                                }
+                                if (pawnMoves.Contains(bSquare))
+                                {
+                                    Move mPawn = GenerateMoves(b, decodeLocationPl, pawnMoves, index, false).Find(x => x.Destination == bSquare);
+                                    if (mPawn.Destination == bSquare) candidateMoves.Add(mPawn);
+                                }
+                            }
+                        }
+                    }
                 }
             }
+
 
             //Generate capturing the checking piece
             if (b.AttackedSquares[(byte)b.ColorToMove - 1][decodeLocation] != null)
             {
                 foreach (ushort defendingPiece in b.AttackedSquares[(byte)b.ColorToMove - 1][decodeLocation])
                 {
-                    if ((defendingPiece & (byte)PieceNames.King) != (byte)PieceNames.King)
+                    byte decodeDefendPos= Board.DecodeLocationFromPieceList(defendingPiece);
+                    if ((defendingPiece & (byte)PieceNames.King) != (byte)PieceNames.King && !PinCheckByRay(b, decodeDefendPos, b.ColorToMove))
                     {
                         decodeDefender = Board.DecodePieceFromPieceList(defendingPiece);
-                        m = new Move(b.ColorToMove, decodeDefender, Board.DecodeLocationFromPieceList(defendingPiece), decodeLocation);
+                        m = new Move(b.ColorToMove, decodeDefender, decodeDefendPos, decodeLocation);
                         candidateMoves.Add(m);
                     }
                 }
@@ -167,18 +209,48 @@ namespace Chess.Game
 
             return candidateMoves;
         }
-        private static List<byte> FindBlockingSquares(ushort attackingPiece, ushort kingSquare)
+        private static List<byte> FindBlockingSquares(ushort attackingPiece, byte kingSquare)
+        {
+            byte decodeLocation = Board.DecodeLocationFromPieceList(attackingPiece);
+            return FindBlockingSquares(decodeLocation, kingSquare);
+        }
+        private static List<byte> FindBlockingSquares(byte attackingPieceLocation, byte defendingPieceLocation)
         {
             List<byte> blockingSquares = new List<byte>();
-            byte decodePiece;
-            byte decodeLocation;
-            decodePiece = Board.DecodePieceFromPieceList(attackingPiece);
-            decodeLocation = Board.DecodeLocationFromPieceList(attackingPiece);
+            short distance, direction, squareTraverse;
 
-            short distance = (short)(kingSquare - decodeLocation);
-            short direction;
-            short squareTraverse = decodeLocation;
+            GetRayInCommon(attackingPieceLocation, defendingPieceLocation, out direction, out distance);
+            
+            squareTraverse = attackingPieceLocation;
+            
+            squareTraverse += direction;
+            while (squareTraverse != defendingPieceLocation)
+            {
+                blockingSquares.Add((byte)squareTraverse);
+                squareTraverse += direction;
+            }
+            return blockingSquares;
+        }
+        private static List<byte> FindBlockingSquares(byte attackingPieceLocation, byte defendingPieceLocation, short direction, short distance)
+        {
+            List<byte> blockingSquares = new List<byte>();
+            short squareTraverse;
+            squareTraverse = attackingPieceLocation;
 
+            squareTraverse += direction;
+            while (squareTraverse != defendingPieceLocation)
+            {
+                blockingSquares.Add((byte)squareTraverse);
+                squareTraverse += direction;
+            }
+            return blockingSquares;
+        }
+
+        private static bool GetRayInCommon(byte pieceLocation1, byte pieceLocation2, out short direction, out short distance)
+        {
+            direction = 0;
+            distance = (short)(pieceLocation2 - pieceLocation1);
+            
             if (distance % 7 == 0)
             {
                 //Forward diagonal /
@@ -196,18 +268,21 @@ namespace Chess.Game
             }
             else
             {
+                if((distance<0 && -distance > MoveData.DistanceToEdge[pieceLocation1][(byte)MoveData.MoveDirectionsIndex.Left]) || (distance>0 && distance > MoveData.DistanceToEdge[pieceLocation1][(byte)MoveData.MoveDirectionsIndex.Right]))
+                {
+                    return false;
+                }
                 //Left-Right
                 direction = 1;
             }
+            //Need to add the sign back in from the subtraction.
             if (distance < 0) direction = (short)-direction;
-            squareTraverse += direction;
-            while (squareTraverse != kingSquare)
-            {
-                blockingSquares.Add((byte)squareTraverse);
-                squareTraverse += direction;
-            }
-            return blockingSquares;
+
+            
+
+            return true;
         }
+
         private static bool CheckForCheck(Board b)
         {
             int ksIndex = (byte)b.ColorToMove - 1;
@@ -239,31 +314,31 @@ namespace Chess.Game
 
                     if ((decodePiece & (byte)PieceNames.Pawn) == (byte)PieceNames.Pawn && side == Colors.White)
                     {
-                        GenerateAttacks(b, sideToGenerateAttacksFor, decodePiece, decodeLocation, MoveData.AvailiblePawnAttacksWhite[decodeLocation], ref attackMap);
+                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.AvailiblePawnAttacksWhite[decodeLocation], ref attackMap);
                     }
                     else if ((decodePiece & (byte)PieceNames.Pawn) == (byte)PieceNames.Pawn && side == Colors.Black)
                     {
-                        GenerateAttacks(b, sideToGenerateAttacksFor, decodePiece, decodeLocation, MoveData.AvailiblePawnAttacksBlack[decodeLocation], ref attackMap);
+                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.AvailiblePawnAttacksBlack[decodeLocation], ref attackMap);
                     }
                     else if ((decodePiece & (byte)PieceNames.Knight) == (byte)PieceNames.Knight)
                     {
-                        GenerateAttacks(b, sideToGenerateAttacksFor, decodePiece, decodeLocation, MoveData.AvailibleKnightMoves[decodeLocation], ref attackMap);
+                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.AvailibleKnightMoves[decodeLocation], ref attackMap);
                     }
                     else if ((decodePiece & (byte)PieceNames.King) == (byte)PieceNames.King)
                     {
-                        GenerateAttacks(b, sideToGenerateAttacksFor, decodePiece, decodeLocation, MoveData.AvailibleKingMoves[decodeLocation], ref attackMap, allowMoveIntoCheck: false, canBePinned: false);
+                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.AvailibleKingMoves[decodeLocation], ref attackMap, allowMoveIntoCheck: false, canBePinned: false);
                     }
                     else if ((decodePiece & (byte)PieceNames.Queen) == (byte)PieceNames.Queen)
                     {
-                        GenerateAttacks(b, sideToGenerateAttacksFor, decodePiece, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.QueenMoves, decodeLocation, b), ref attackMap);
+                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FQueenMoves, decodeLocation, b), ref attackMap);
                     }
                     else if ((decodePiece & (byte)PieceNames.Bishop) == (byte)PieceNames.Bishop)
                     {
-                        GenerateAttacks(b, sideToGenerateAttacksFor, decodePiece, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.BishopMoves, decodeLocation, b), ref attackMap);
+                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FBishopMoves, decodeLocation, b), ref attackMap);
                     }
                     else if ((decodePiece & (byte)PieceNames.Rook) == (byte)PieceNames.Rook)
                     {
-                        GenerateAttacks(b, sideToGenerateAttacksFor, decodePiece, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.RookMoves, decodeLocation, b), ref attackMap);
+                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FRookMoves, decodeLocation, b), ref attackMap);
                     }
                     else
                     {
@@ -323,12 +398,14 @@ namespace Chess.Game
             byte destinationPiece;
             //This is a hacky way to avoid accessing an attack map that hasn't been generated yet.
             if (b.AttackedSquares[2 - (byte)c] == null) allowMoveIntoCheck = true;
-            if (canBePinned && PinCheck(b, origin)) return;
+            if (canBePinned && PinCheckByRay(b, origin, c)) return;
 
             foreach (byte destination in availibleMoves)
             {
                 destinationPiece = b.GameBoard[destination];
 
+                //EDIT TO ALLOW FRIENDLY PIECES TO BE PROTECTED
+                //NEEDS WORK
                 if (true)//destinationPiece == 0 || ((destinationPiece & (byte)c) != (byte)c))
                 {
                     if (!allowMoveIntoCheck && b.AttackedSquares[2 - (byte)c][destination] != null)
@@ -346,22 +423,16 @@ namespace Chess.Game
                 }
             }
         }
-        private static bool PinCheckByRay(Board b, MoveData.MoveDirections md, byte origin, byte destination)
+        private static bool PinCheckByRay(Board b, byte origin, Colors color)
         {
-            short distance = (short)(origin - destination);
-            short direction;
-            short squareTraverse = origin;
-
-            if (distance < 0) direction = (short)-direction;
-            squareTraverse += direction;
-            while (squareTraverse != kingSquare)
-            {
-                blockingSquares.Add((byte)squareTraverse);
-                squareTraverse += direction;
-            }
-
             byte checkPieceLocation;
-            byte opponentColor = (byte)(2 - (byte)b.ColorToMove);
+            byte kingSquare = b.KingSquares[(byte)color - 1];
+            bool possiblePin = false;
+            byte opponentColor = (byte)(2 - (byte)color);
+            short rayToKing;
+            short attackingRay;
+            short distance;
+            if (!GetRayInCommon(origin, kingSquare, out rayToKing, out distance)) return false; 
             if (b.AttackedSquares[opponentColor] == null) return false;
             if (b.AttackedSquares[opponentColor][origin] != null)
             {
@@ -371,35 +442,44 @@ namespace Chess.Game
 
                     if ((piece & (byte)PieceNames.Queen) == (byte)PieceNames.Queen)
                     {
-                        if (MoveData.AvailibleQueenMoves[checkPieceLocation].Contains(b.KingSquares[(byte)b.ColorToMove - 1]) && MoveData.GenerateSlidingMoves(MoveData.QueenMoves, checkPieceLocation, b, origin).Contains(b.KingSquares[(byte)b.ColorToMove - 1]))
+                        if (MoveData.AvailibleQueenMoves[checkPieceLocation].Contains(kingSquare))
                         {
-                            Console.WriteLine("Looking at moving the " + Pieces.DecodePieceToChar(b.GameBoard[origin]) + " at " + origin + " but it's pinned to the king.");
-                            Console.WriteLine(b.ToString());
-                            return true;
+                            possiblePin = true;
                         }
                     }
                     else if ((piece & (byte)PieceNames.Bishop) == (byte)PieceNames.Bishop)
                     {
-                        if (MoveData.AvailibleBishopMoves[checkPieceLocation].Contains(b.KingSquares[(byte)b.ColorToMove - 1]) && MoveData.GenerateSlidingMoves(MoveData.BishopMoves, checkPieceLocation, b, origin).Contains(b.KingSquares[(byte)b.ColorToMove - 1]))
+                        if (MoveData.AvailibleBishopMoves[checkPieceLocation].Contains(kingSquare))
                         {
-                            //Console.WriteLine("Looking at moving the " + Pieces.DecodePieceToChar(b.GameBoard[origin]));
-                            //b.PrintBoard();
-                            return true;
+                            possiblePin = true;
                         }
                     }
                     else if ((piece & (byte)PieceNames.Rook) == (byte)PieceNames.Rook)
                     {
-                        if (MoveData.AvailibleRookMoves[checkPieceLocation].Contains(b.KingSquares[(byte)b.ColorToMove - 1]) && MoveData.GenerateSlidingMoves(MoveData.RookMoves, checkPieceLocation, b, origin).Contains(b.KingSquares[(byte)b.ColorToMove - 1]))
+                        if (MoveData.AvailibleRookMoves[checkPieceLocation].Contains(kingSquare))
                         {
-                            //Console.WriteLine("Looking at moving the " + Pieces.DecodePieceToChar(b.GameBoard[origin]));
-                            //b.PrintBoard();
-                            return true;
+                            possiblePin = true;
                         }
+                    }
+                    if(possiblePin)
+                    {
+                        if (!GetRayInCommon(origin, checkPieceLocation, out attackingRay, out distance)) return false;
+                        if (attackingRay != rayToKing && attackingRay != -rayToKing) return false;
+                        List<byte> potentialDefenders = FindBlockingSquares(origin, kingSquare);
+                        foreach(byte potD in potentialDefenders)
+                        {
+                            if (b.GameBoard[potD] != 0) return false;
+                        }
+                        return true;
+                        //Console.WriteLine("Looking at moving the " + Pieces.DecodePieceToChar(b.GameBoard[origin]) + " at " + origin + " but it's pinned to the king.");
+                        //Console.WriteLine(b.ToString());
+
                     }
                 }
             }
             return false;
         }
+        //No Longer Used
         private static bool PinCheck(Board b, byte origin)
         {
             byte checkPieceLocation;
@@ -413,7 +493,7 @@ namespace Chess.Game
 
                     if ((piece & (byte)PieceNames.Queen) == (byte)PieceNames.Queen)
                     {
-                        if (MoveData.AvailibleQueenMoves[checkPieceLocation].Contains(b.KingSquares[(byte)b.ColorToMove - 1]) && MoveData.GenerateSlidingMoves(MoveData.QueenMoves, checkPieceLocation, b, origin).Contains(b.KingSquares[(byte)b.ColorToMove - 1]))
+                        if (MoveData.AvailibleQueenMoves[checkPieceLocation].Contains(b.KingSquares[(byte)b.ColorToMove - 1]) && MoveData.GenerateSlidingMoves(MoveData.FQueenMoves, checkPieceLocation, b, origin).Contains(b.KingSquares[(byte)b.ColorToMove - 1]))
                         {
                             Console.WriteLine("Looking at moving the " + Pieces.DecodePieceToChar(b.GameBoard[origin]) + " at " + origin + " but it's pinned to the king.");
                             Console.WriteLine(b.ToString());
@@ -422,7 +502,7 @@ namespace Chess.Game
                     }
                     else if ((piece & (byte)PieceNames.Bishop) == (byte)PieceNames.Bishop)
                     {
-                        if (MoveData.AvailibleBishopMoves[checkPieceLocation].Contains(b.KingSquares[(byte)b.ColorToMove - 1]) && MoveData.GenerateSlidingMoves(MoveData.BishopMoves, checkPieceLocation, b, origin).Contains(b.KingSquares[(byte)b.ColorToMove - 1]))
+                        if (MoveData.AvailibleBishopMoves[checkPieceLocation].Contains(b.KingSquares[(byte)b.ColorToMove - 1]) && MoveData.GenerateSlidingMoves(MoveData.FBishopMoves, checkPieceLocation, b, origin).Contains(b.KingSquares[(byte)b.ColorToMove - 1]))
                         {
                             //Console.WriteLine("Looking at moving the " + Pieces.DecodePieceToChar(b.GameBoard[origin]));
                             //b.PrintBoard();
@@ -431,7 +511,7 @@ namespace Chess.Game
                     }
                     else if ((piece & (byte)PieceNames.Rook) == (byte)PieceNames.Rook)
                     {
-                        if (MoveData.AvailibleRookMoves[checkPieceLocation].Contains(b.KingSquares[(byte)b.ColorToMove - 1]) && MoveData.GenerateSlidingMoves(MoveData.RookMoves, checkPieceLocation, b, origin).Contains(b.KingSquares[(byte)b.ColorToMove - 1]))
+                        if (MoveData.AvailibleRookMoves[checkPieceLocation].Contains(b.KingSquares[(byte)b.ColorToMove - 1]) && MoveData.GenerateSlidingMoves(MoveData.FRookMoves, checkPieceLocation, b, origin).Contains(b.KingSquares[(byte)b.ColorToMove - 1]))
                         {
                             //Console.WriteLine("Looking at moving the " + Pieces.DecodePieceToChar(b.GameBoard[origin]));
                             //b.PrintBoard();
@@ -445,11 +525,12 @@ namespace Chess.Game
         private static List<Move> GenerateMoves(Board b, byte origin, short[] availibleMoves, int plIndex = -1, bool includeCaptures = true, bool includeQuietMoves = true, bool canBePinned = true, bool allowMoveIntoCheck = true, bool isPawn = false)
         {
             byte destinationPiece;
+            bool alreadyLoggedMoves = false;
             List<Move> candidateMoves = new List<Move>();
             Move m;
 
             //Need to check if this piece is pinned.
-            if (canBePinned && PinCheck(b, origin))
+            if (canBePinned && PinCheckByRay(b, origin, b.ColorToMove))
             {
                 return candidateMoves;
             }
@@ -458,7 +539,20 @@ namespace Chess.Game
             {
                 destinationPiece = b.GameBoard[destination];
 
-                if (destinationPiece == 0 && includeQuietMoves)
+                if (destination == (byte)b.EnPassantTarget && isPawn && destinationPiece == 0)
+                {
+                    if (b.ColorToMove == Colors.White)
+                    {
+                        m = new Move(Colors.White, b.GameBoard[origin], origin, destination, plIndex, b.GameBoard[destination - 8]);
+                    }
+                    else
+                    {
+                        m = new Move(Colors.Black, b.GameBoard[origin], origin, destination, plIndex, b.GameBoard[destination + 8]);
+                    }
+                    m.CaptureEnPassant = true;
+                    candidateMoves.Add(m);
+                }
+                else if(destinationPiece == 0 && includeQuietMoves)
                 {
                     if (!allowMoveIntoCheck && b.AttackedSquares[2 - (byte)b.ColorToMove][destination] != null)
                     {
@@ -477,8 +571,17 @@ namespace Chess.Game
                             {
                                 m.AllowsEnPassantTarget = (Squares)(origin + 8);
                             }
+                            if((b.ColorToMove == Colors.White && destination < 8) || (b.ColorToMove == Colors.Black && destination > 55))
+                            {
+                                alreadyLoggedMoves = true;
+                                for(int i =1; i < 5; i++)
+                                {
+                                    m = new Move(b.ColorToMove, b.GameBoard[origin], origin, destination, plIndex, promoteIntoPiece: (byte)(2*Math.Pow(2, i)));
+                                    candidateMoves.Add(m);
+                                }
+                            }
                         }
-                        candidateMoves.Add(m);
+                        if(!alreadyLoggedMoves) candidateMoves.Add(m);
                         //Console.WriteLine("Generating a quiet move with " + Pieces.DecodePieceToChar(m.Piece) + " - " + m.ToString()) ;
                     }
                 }
@@ -491,27 +594,25 @@ namespace Chess.Game
                         {
 
                         }
+                        else if (isPawn && ((b.ColorToMove == Colors.White && destination < 8) || (b.ColorToMove == Colors.Black && destination > 55)))
+                        {
+                            
+                            alreadyLoggedMoves = true;
+                            for (int i = 1; i < 5; i++)
+                            {
+                                m = new Move(b.ColorToMove, b.GameBoard[origin], origin, destination, plIndex, promoteIntoPiece: (byte)(2 * Math.Pow(2, i)));
+                                candidateMoves.Add(m);
+                            }
+                        }
                         else
                         {
                             m = new Move(b.ColorToMove, b.GameBoard[origin], origin, destination, plIndex, destinationPiece);
-                            candidateMoves.Add(m);
+                            if (!alreadyLoggedMoves) candidateMoves.Add(m);
                         }
                     }
                     //Console.WriteLine("Generating a capture move " + Pieces.DecodePieceToChar(m.Piece) + " takes " + Pieces.DecodePieceToChar(m.PieceCaptured) + " - " + m.ToString());
                 }
-                else if(destination == (byte)b.EnPassantTarget && isPawn)
-                {
-                    if (b.ColorToMove == Colors.White)
-                    {
-                        m = new Move(Colors.White, b.GameBoard[origin], origin, destination, plIndex, b.GameBoard[destination - 8]);
-                    }
-                    else
-                    {
-                        m = new Move(Colors.Black, b.GameBoard[origin], origin, destination, plIndex, b.GameBoard[destination + 8]);
-                    }
-                    m.CaptureEnPassant = true;
-                    candidateMoves.Add(m);
-                }
+                 
             }
             return candidateMoves;
         }

@@ -12,8 +12,9 @@ namespace Chess
     {
         static void Main(string[] args)
         {
-            GameManager gm = new GameManager("3k4/3Q4/8/8/8/8/3R4/3K4 b - - 0 1");
-            //gm.PlayMove(new Move("b1a3", gm.Board));
+            GameManager gm = new GameManager("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2");
+
+            //gm.RunPerft(1);
             gm.PerftDivided(1);
             Console.ReadKey();
             /*for(int i = 0; i < 80; i++)

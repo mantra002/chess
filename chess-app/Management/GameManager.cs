@@ -83,6 +83,7 @@ namespace Chess.Management
             long totalNodes = 0;
             List<Move> moves = MoveGeneration.GenerateLegalMoves(this.Board);
             if (moves.Count() == 0) Console.WriteLine("Checkmate!");
+            moves.Sort();
             foreach(Move m in moves)
             {
                 nodes = 0;

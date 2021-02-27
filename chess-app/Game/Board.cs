@@ -93,26 +93,26 @@ namespace Chess.Game
                         CastleMask = (byte)(CastleMask & 0b1101);
                     }
                 }
-                
-                if (move.PromoteIntoPiece != 0)
+                RemovePiece(move.Piece, move.Origin, move.PieceListIndex); //Remove the moving piece
+                if (move.PieceCaptured != 0) //If there is a capture
                 {
-                    RemovePiece(move.Piece, move.Origin, move.PieceListIndex);
-                    AddPiece(move.PromoteIntoPiece, move.Destination);
-                }
-                else
-                {
-                    RemovePiece(move.Piece, move.Origin, move.PieceListIndex);
-                    AddPiece(move.Piece, move.Destination);
-                }
-                if (move.PieceCaptured != 0)
-                {
-                    if (!move.CaptureEnPassant) PieceList.Remove(EncodePieceForPieceList(move.PieceCaptured, move.Destination));
+                    if (!move.CaptureEnPassant) RemovePiece(move.PieceCaptured, move.Destination); //Remove captured piece
                     else
                     {
-                        if(move.SideToMove == Colors.White) RemovePiece(move.PieceCaptured, (byte)(move.Destination+8));
+                        if (move.SideToMove == Colors.White) RemovePiece(move.PieceCaptured, (byte)(move.Destination + 8)); //Remove pawn captured by EP
                         else RemovePiece(move.PieceCaptured, (byte)(move.Destination - 8));
                     }
                 }
+                if (move.PromoteIntoPiece != 0) //If promotion
+                {
+                    
+                    AddPiece(move.PromoteIntoPiece, move.Destination); //Add the promoted piece
+                }
+                else
+                {
+                    AddPiece(move.Piece, move.Destination); //Add the moved piece back in.
+                }
+               
               
             }
             else if(move.SideToMove==Colors.White)
@@ -179,19 +179,38 @@ namespace Chess.Game
             if (InCheck) InCheck = false;
             if (move.CastleFlags == CastleFlags.None)
             {
-                RemovePiece(move.Piece, move.Destination); //Remove the piece that's going
-                AddPiece(move.PieceCaptured, move.Destination);
-                if (move.PromoteIntoPiece != 0)
+                if (move.PromoteIntoPiece != 0) //If promotion
                 {
-                    AddPiece(move.Piece, move.Origin);
-                    RemovePiece(move.PromoteIntoPiece, move.Destination);
-                    AddPiece(move.PieceCaptured, move.Destination);
+
+                    RemovePiece(move.PromoteIntoPiece, move.Destination); //remove the promoted piece
                 }
                 else
                 {
-                    AddPiece(move.Piece, move.Origin);
+                    RemovePiece(move.Piece, move.Destination); //Remove the moved piece
                 }
 
+                
+                if (move.PieceCaptured != 0) //If there is a capture
+                {
+                    if (!move.CaptureEnPassant) AddPiece(move.PieceCaptured, move.Destination); //Add the captured piece
+                    else
+                    {
+                        if (move.SideToMove == Colors.White) AddPiece(move.PieceCaptured, (byte)(move.Destination + 8)); //Add pawn captured by EP
+                        else AddPiece(move.PieceCaptured, (byte)(move.Destination - 8));
+                    }
+                }
+                AddPiece(move.Piece, move.Origin); //Add the moving piece back to the origin
+                //AddPiece(move.Piece, move.Origin);
+                //if (move.PromoteIntoPiece != 0)
+                //{
+                //    RemovePiece(move.PromoteIntoPiece, move.Destination);
+                //    AddPiece(move.PieceCaptured, move.Destination);
+                //}
+                //else
+                //{
+                //    RemovePiece(move.Piece, move.Destination); //Remove the piece that's going
+                //}
+                //AddPiece(move.PieceCaptured, move.Destination);
             }
             else if (move.SideToMove == Colors.White)
             {

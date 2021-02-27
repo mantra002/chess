@@ -55,6 +55,7 @@ namespace Chess.Game
         }
         public Move(string move, Board b)
         {
+            move = move.Trim();
             (Origin, Destination) = GetSquaresFromString(move);
             Piece = b.GameBoard[Origin];
 
@@ -79,8 +80,7 @@ namespace Chess.Game
             CastleFlags = CastleFlags.None;
             if(SideToMove == Colors.White)
             {
-                //b.AttackedSquares[0] = MoveGeneration.GenerateAttackMap(b, Colors.Black);
-                
+                           
                 if (Origin == 255)
                 {
                     CastleFlags = CastleFlags.WhiteShortCastle;
@@ -92,7 +92,6 @@ namespace Chess.Game
             }
             else
             {
-                //b.AttackedSquares[1] = MoveGeneration.GenerateAttackMap(b, Colors.White);
                 if (Origin == 255)
                 {
                     CastleFlags = CastleFlags.BlackShortCastle;
@@ -103,8 +102,25 @@ namespace Chess.Game
                 }
             }
   
-            
-            PromoteIntoPiece = 0; //not implemented
+            if(move.Length == 5 && move != "O-O-O")
+            {
+                switch(move[4])
+                {
+                    case 'b':
+                        PromoteIntoPiece = (byte)((byte)PieceNames.Bishop | (byte)SideToMove);
+                        break;
+                    case 'n':
+                        PromoteIntoPiece = (byte)((byte)PieceNames.Knight | (byte)SideToMove);
+                        break;
+                    case 'q':
+                        PromoteIntoPiece = (byte)((byte)PieceNames.Queen | (byte)SideToMove);
+                        break;
+                    case 'r':
+                        PromoteIntoPiece = (byte)((byte)PieceNames.Rook | (byte)SideToMove);
+                        break;
+                }
+            }
+
             if((Piece & (byte) PieceNames.Pawn) == (byte)PieceNames.Pawn)
             {
                 if(Origin - Destination == 16)

@@ -554,8 +554,9 @@ namespace Chess.Game
                 else
                 {
                     destinationPiece = b.GameBoard[destination];
-
-                    if (destination == (byte)b.EnPassantTarget && isPawn && destinationPiece == 0 && !EpPinCheck(b, origin, (byte)b.EnPassantTarget))
+                    //Don't need to worry about a pawn move (non-capture) happening here, only a diagonal move
+                    //can get into the EP square.
+                    if (destination == (byte)b.EnPassantTarget && isPawn && includeCaptures && destinationPiece == 0 &&!EpPinCheck(b, origin, (byte)b.EnPassantTarget))
                     {
                         if (b.ColorToMove == Colors.White)
                         {

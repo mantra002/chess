@@ -306,6 +306,8 @@ namespace Chess.Game
             if (sideToGenerateAttacksFor == 0) side = b.ColorToMove;
             else side = sideToGenerateAttacksFor;
 
+            byte kingSquare = b.KingSquares[2-(byte)side];
+
             int numberOfPieces = b.PieceList.Count();
             for (int index = 0; index < numberOfPieces; index++)
             {
@@ -335,15 +337,15 @@ namespace Chess.Game
                     }
                     else if ((decodePiece & (byte)PieceNames.Queen) == (byte)PieceNames.Queen)
                     {
-                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FQueenMoves, decodeLocation, b), ref attackMap, ref attackMapWithoutPins);
+                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FQueenMoves, decodeLocation, b, kingSquare), ref attackMap, ref attackMapWithoutPins);
                     }
                     else if ((decodePiece & (byte)PieceNames.Bishop) == (byte)PieceNames.Bishop)
                     {
-                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FBishopMoves, decodeLocation, b), ref attackMap, ref attackMapWithoutPins);
+                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FBishopMoves, decodeLocation, b, kingSquare), ref attackMap, ref attackMapWithoutPins);
                     }
                     else if ((decodePiece & (byte)PieceNames.Rook) == (byte)PieceNames.Rook)
                     {
-                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FRookMoves, decodeLocation, b), ref attackMap, ref attackMapWithoutPins);
+                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FRookMoves, decodeLocation, b, kingSquare), ref attackMap, ref attackMapWithoutPins);
                     }
                     else
                     {

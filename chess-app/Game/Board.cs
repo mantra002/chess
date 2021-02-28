@@ -56,6 +56,7 @@ namespace Chess.Game
             if (CheckMate) return;
             AttackedSquaresHistory.Push(AttackedSquares);
             AttackedSquaresWithoutPinsHistory.Push(AttackedSquaresWithoutPins);
+
             Ply++;
             GameHistory.Push(move);
          

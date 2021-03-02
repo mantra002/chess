@@ -12,8 +12,9 @@ namespace Chess.Game
 
         public byte[] GameBoard = new byte[64];
         public Colors ColorToMove = Colors.White;
-        public byte CastleMask = 0b1111; //White Short - White Long - Black Short - Black Long
+        public byte CastleMask = 0b0000; //White Short - White Long - Black Short - Black Long
         public Squares EnPassantTarget = Squares.None;
+        public Squares EnPassantTargetTimeZero = Squares.None;
         public bool InCheck = false;
         public bool CheckMate = false;
         public List<ushort> PieceList = new List<ushort>(); //Formmatted as 0bLLLLLLLLPPPPPPCC L = Location; P = Piece; C = Color
@@ -24,8 +25,7 @@ namespace Chess.Game
         public List<ushort>[][] AttackedSquares = new List<ushort>[2][];
         public List<ushort>[][] AttackedSquaresWithoutPins = new List<ushort>[2][];
         public byte[] KingSquares = new byte[2];
-        private byte castleMaskAtCastleWhite;
-        private byte castleMaskAtCastleBlack;
+
         public short Ply = 0;
         public byte FiftyMoveCounter = 0; //In Ply
        
@@ -59,23 +59,23 @@ namespace Chess.Game
 
             Ply++;
             GameHistory.Push(move);
-         
-            
+            CastleMaskHistory.Push(CastleMask);
+
             if (move.CastleFlags == CastleFlags.None)
             {
                 if((byte)move.Piece == ((byte)PieceNames.King | (byte)Colors.White))
                 {
-                    CastleMask = (byte)(CastleMask & 0b0011);
+                    CastleMask = (byte)(CastleMask & 0b0011); //White Short - White Long - Black Short - Black Long
                 }
                 else if ((byte)move.Piece == ((byte)PieceNames.Rook | (byte)Colors.White))
                 {
                     if(move.Origin == (byte) Squares.a1)
                     {
-                        CastleMask = (byte)(CastleMask & 0b0111);
+                        CastleMask = (byte)(CastleMask & 0b1011);
                     }
                     else if(move.Origin == (byte)Squares.h1)
                     {
-                        CastleMask = (byte)(CastleMask & 0b1011);
+                        CastleMask = (byte)(CastleMask & 0b0111);
                     }
 
                 }
@@ -94,10 +94,25 @@ namespace Chess.Game
                         CastleMask = (byte)(CastleMask & 0b1101);
                     }
                 }
+#if DEBUG
+                if (GameBoard[move.Origin] != move.Piece)
+                {
+                    throw new Exception("Trying to move the wrong piece!");
+                }
+#endif
                 RemovePiece(move.Piece, move.Origin, move.PieceListIndex); //Remove the moving piece
                 if (move.PieceCaptured != 0) //If there is a capture
                 {
-                    if (!move.CaptureEnPassant) RemovePiece(move.PieceCaptured, move.Destination); //Remove captured piece
+                    if (!move.CaptureEnPassant)
+                    {
+#if DEBUG
+                        if (GameBoard[move.Destination] != move.PieceCaptured)
+                        {
+                            throw new Exception("Trying to capture the wrong piece!");
+                        }
+#endif
+                        RemovePiece(move.PieceCaptured, move.Destination); //Remove captured piece
+                    }
                     else
                     {
                         if (move.SideToMove == Colors.White) RemovePiece(move.PieceCaptured, (byte)(move.Destination + 8)); //Remove pawn captured by EP
@@ -106,11 +121,22 @@ namespace Chess.Game
                 }
                 if (move.PromoteIntoPiece != 0) //If promotion
                 {
-                    
+#if DEBUG
+                    if (GameBoard[move.Destination] != 0)
+                    {
+                        throw new Exception("Trying to promote into an occupied square!");
+                    }
+#endif
                     AddPiece(move.PromoteIntoPiece, move.Destination); //Add the promoted piece
                 }
                 else
                 {
+#if DEBUG
+                    if (GameBoard[move.Destination] != 0)
+                    {
+                        throw new Exception("Trying to move into an occupied square!");
+                    }
+#endif
                     AddPiece(move.Piece, move.Destination); //Add the moved piece back in.
                 }
                
@@ -120,7 +146,6 @@ namespace Chess.Game
             {
                 RemovePiece((byte)PieceNames.King | (byte)Colors.White, (byte)Squares.e1);
 
-                castleMaskAtCastleWhite = (byte)(CastleMask & 0b1100);
                 CastleMask = (byte)(CastleMask & 0b0011);
 
                 if (move.CastleFlags == CastleFlags.WhiteShortCastle)
@@ -138,7 +163,6 @@ namespace Chess.Game
             }
             else 
             {
-                castleMaskAtCastleBlack = (byte)(CastleMask & 0b0011);
 
                 CastleMask = (byte)(CastleMask & 0b1100);
                 RemovePiece((byte)PieceNames.King | (byte)Colors.Black, (byte)Squares.e8);
@@ -169,8 +193,6 @@ namespace Chess.Game
                 ColorToMove = Colors.White;
             }
             EnPassantTarget = move.AllowsEnPassantTarget;
-            CastleMaskHistory.Push(CastleMask);
-
         }
 
         public void UndoMove(Move move)
@@ -182,11 +204,24 @@ namespace Chess.Game
             {
                 if (move.PromoteIntoPiece != 0) //If promotion
                 {
+#if DEBUG
+                    if(GameBoard[move.Destination] != move.PromoteIntoPiece)
+                    {
+                        throw new Exception("Removing non existant promotion piece!");
+                    }
+#endif
 
                     RemovePiece(move.PromoteIntoPiece, move.Destination); //remove the promoted piece
                 }
                 else
                 {
+#if DEBUG
+                    if (GameBoard[move.Destination] != move.Piece)
+                    {
+                        throw new Exception("Removing non existant piece!");
+                    }
+#endif
+
                     RemovePiece(move.Piece, move.Destination); //Remove the moved piece
                 }
 
@@ -200,18 +235,14 @@ namespace Chess.Game
                         else AddPiece(move.PieceCaptured, (byte)(move.Destination - 8));
                     }
                 }
+#if DEBUG
+                if (GameBoard[move.Origin] != 0)
+                {
+                    throw new Exception("Trying to place piece into an occupied square!");
+                }
+#endif
                 AddPiece(move.Piece, move.Origin); //Add the moving piece back to the origin
-                //AddPiece(move.Piece, move.Origin);
-                //if (move.PromoteIntoPiece != 0)
-                //{
-                //    RemovePiece(move.PromoteIntoPiece, move.Destination);
-                //    AddPiece(move.PieceCaptured, move.Destination);
-                //}
-                //else
-                //{
-                //    RemovePiece(move.Piece, move.Destination); //Remove the piece that's going
-                //}
-                //AddPiece(move.PieceCaptured, move.Destination);
+
             }
             else if (move.SideToMove == Colors.White)
             {
@@ -251,7 +282,12 @@ namespace Chess.Game
             if (ColorToMove == Colors.White) ColorToMove = Colors.Black;
             else ColorToMove = Colors.White;
 
-            EnPassantTarget = GameHistory.Pop().AllowsEnPassantTarget;
+            if (Ply == 0)
+            {
+                EnPassantTarget = EnPassantTargetTimeZero;
+                GameHistory.Pop();
+            }
+            else EnPassantTarget = GameHistory.Pop().AllowsEnPassantTarget;
             AttackedSquares = AttackedSquaresHistory.Pop();
             AttackedSquaresWithoutPins = AttackedSquaresWithoutPinsHistory.Pop();
             CastleMask = CastleMaskHistory.Pop();
@@ -307,6 +343,7 @@ namespace Chess.Game
             if (splitFen[3].Trim() != "-")
             {
                 EnPassantTarget = (Squares)Enum.Parse(typeof(Squares), splitFen[3].Trim(), true);
+                EnPassantTargetTimeZero = EnPassantTarget;
             }
 
             //50 Move Timer
@@ -340,13 +377,12 @@ namespace Chess.Game
         {
             GameBoard = new byte[64];
             PieceList = new List<ushort>();
-            CastleMask = 0;
+            CastleMask = 0b0000;
             EnPassantTarget = Squares.None;
-            castleMaskAtCastleBlack = 0;
-            castleMaskAtCastleWhite = 0;
             Ply = 0;
             GameHistory.Clear();
             AttackedSquaresHistory.Clear();
+            CastleMaskHistory.Clear();
             InCheck = false;
             CheckMate = false;
             FiftyMoveCounter = 0;

@@ -17,7 +17,6 @@ namespace Chess.Game
             int numberOfPieces = b.PieceList.Count();
             short[] pawnMoves;
 
-
             if (b.ColorToMove == Colors.White)
             {
                 (b.AttackedSquares[0], b.AttackedSquaresWithoutPins[0]) = MoveGeneration.GenerateAttackMap(b, Colors.Black);
@@ -117,10 +116,9 @@ namespace Chess.Game
             byte kingSquare = b.KingSquares[(byte)b.ColorToMove - 1];
             List<Move> candidateMoves = new List<Move>();
             Move m;
-            byte decodeDefender;
+            byte decodeDefender, decodeDefenderPos;
             byte decodePiecePl, decodeLocationPl;
 
-            //TODO: This sometimes returns moves that are in check.
             candidateMoves.AddRange(GenerateMoves(b, kingSquare, MoveData.AvailibleKingMoves[kingSquare], canBePinned: false, allowMoveIntoCheck: false));
 
             List<ushort> piecesAttacking = b.AttackedSquaresWithoutPins[opponentColor][kingSquare];
@@ -131,11 +129,14 @@ namespace Chess.Game
             byte decodePiece = Board.DecodePieceFromPieceList(piecesAttacking[0]);
             byte decodeLocation = Board.DecodeLocationFromPieceList(piecesAttacking[0]);
 
+            (b.AttackedSquares[(byte)b.ColorToMove - 1], b.AttackedSquaresWithoutPins[(byte)b.ColorToMove - 1]) = MoveGeneration.GenerateAttackMap(b, b.ColorToMove);
+
             //Try to generate blocking moves if it's not attacked by a Knight or pawn.
             if (((decodePiece & (byte)PieceNames.Knight) != (byte)PieceNames.Knight) && ((decodePiece & (byte)PieceNames.Pawn) != (byte)PieceNames.Pawn))
             {
                 List<byte> blockingSquares = FindBlockingSquares(piecesAttacking[0], kingSquare);
                 int numberOfPieces = b.PieceList.Count();
+                
                 foreach (byte bSquare in blockingSquares)
                 {
                     if (b.AttackedSquares[(byte)b.ColorToMove - 1][bSquare] != null)
@@ -143,10 +144,11 @@ namespace Chess.Game
                         foreach (ushort defendingPiece in b.AttackedSquares[(byte)b.ColorToMove - 1][bSquare])
                         {
                             decodeDefender = Board.DecodePieceFromPieceList(defendingPiece);
-                            //Pawn attacks actually don't defend the king, their moves need to be checked.
-                            if ((decodeDefender & (byte)PieceNames.King) != (byte)PieceNames.King && (decodeDefender & (byte)PieceNames.Pawn) != (byte)PieceNames.Pawn)
+                            decodeDefenderPos = Board.DecodeLocationFromPieceList(defendingPiece);
+                            //Pawn attacks actually don't defend the king, their moves need to be checked seperately.
+                            if ((decodeDefender & (byte)PieceNames.King) != (byte)PieceNames.King && (decodeDefender & (byte)PieceNames.Pawn) != (byte)PieceNames.Pawn && !PinCheckByRay(b, decodeDefenderPos, bSquare, b.ColorToMove))
                             {
-                                m = new Move(b.ColorToMove, decodeDefender, Board.DecodeLocationFromPieceList(defendingPiece), bSquare);
+                                m = new Move(b.ColorToMove, decodeDefender, decodeDefenderPos, bSquare);
                                 candidateMoves.Add(m);
                             }
                         }
@@ -202,7 +204,7 @@ namespace Chess.Game
                     if ((defendingPiece & (byte)PieceNames.King) != (byte)PieceNames.King && !PinCheckByRay(b, decodeDefendPos, decodeLocation, b.ColorToMove))
                     {
                         decodeDefender = Board.DecodePieceFromPieceList(defendingPiece);
-                        m = new Move(b.ColorToMove, decodeDefender, decodeDefendPos, decodeLocation);
+                        m = new Move(b.ColorToMove, decodeDefender, decodeDefendPos, decodeLocation, pieceCaptured: decodePiece);
                         candidateMoves.Add(m);
                     }
                 }
@@ -253,24 +255,25 @@ namespace Chess.Game
             direction = 0;
             distance = (short)(pieceLocation2 - pieceLocation1);
 
-            if (distance % 7 == 0)
+            if (distance % 7 == 0 && Math.Abs(distance / 7) < 8)
             {
                 //Forward diagonal /
                 direction = 7;
             }
-            else if (distance % 8 == 0)
+            else if (distance % 8 == 0 && Math.Abs(distance / 8) < 8)
             {
                 //Up-Down
                 direction = 8;
             }
-            else if (distance % 9 == 0)
+            else if (distance % 9 == 0 && Math.Abs(distance / 9) < 8)
             {
                 //Backslash diagonal \
                 direction = 9;
             }
             else
             {
-                if ((distance < 0 && -distance > MoveData.DistanceToEdge[pieceLocation1][(byte)MoveData.MoveDirectionsIndex.Left]) || (distance > 0 && distance > MoveData.DistanceToEdge[pieceLocation1][(byte)MoveData.MoveDirectionsIndex.Right]))
+                if ((distance < 0 && -distance > MoveData.DistanceToEdge[pieceLocation1][(byte)MoveData.MoveDirectionsIndex.Left]) || 
+                    (distance > 0 && distance > MoveData.DistanceToEdge[pieceLocation1][(byte)MoveData.MoveDirectionsIndex.Right]))
                 {
                     return false;
                 }
@@ -442,14 +445,16 @@ namespace Chess.Game
             short desintationRay, destinationDistance;
             short attackingRay;
             short distance;
-            if (!GetRayInCommon(origin, kingSquare, out rayToKing, out distance)) return false; //The piece isn't on the same ray as the king
-            GetRayInCommon(destination, kingSquare, out desintationRay, out destinationDistance);
-            if (rayToKing == desintationRay) return false; // Verify the move stays on the same ray.
+
             if (b.AttackedSquaresWithoutPins[opponentColor] == null) return false;
             if (b.AttackedSquaresWithoutPins[opponentColor][origin] != null)
             {
+                if (!GetRayInCommon(origin, kingSquare, out rayToKing, out distance)) return false; //The piece isn't on the same ray as the king
+                GetRayInCommon(destination, kingSquare, out desintationRay, out destinationDistance);
+                if (rayToKing == desintationRay) return false; // Verify the move stays on the same ray.
                 foreach (ushort piece in b.AttackedSquaresWithoutPins[opponentColor][origin])
                 {
+                    possiblePin = false;
                     checkPieceLocation = Board.DecodeLocationFromPieceList(piece);
 
                     if ((piece & (byte)PieceNames.Queen) == (byte)PieceNames.Queen)
@@ -475,18 +480,20 @@ namespace Chess.Game
                     }
                     if (possiblePin)
                     {
-                        if (!GetRayInCommon(origin, checkPieceLocation, out attackingRay, out distance)) return false;
-                        if (attackingRay != rayToKing && attackingRay != -rayToKing) return false;
+                        if (!GetRayInCommon(origin, checkPieceLocation, out attackingRay, out distance)) continue;
+                        if (attackingRay != rayToKing && attackingRay != -rayToKing) continue;
                         List<byte> potentialDefenders = FindBlockingSquares(origin, kingSquare);
+                        bool defenderFound = false;
                         foreach (byte potD in potentialDefenders)
                         {
-                            if (b.GameBoard[potD] != 0) return false;
+                            if (b.GameBoard[potD] != 0) defenderFound = true ;
                         }
-                        return true;
+                        if (!defenderFound) return true;
                         //Console.WriteLine("Looking at moving the " + Pieces.DecodePieceToChar(b.GameBoard[origin]) + " at " + origin + " but it's pinned to the king.");
                         //Console.WriteLine(b.ToString());
 
                     }
+
                 }
             }
             return false;
@@ -583,12 +590,12 @@ namespace Chess.Game
             List<Move> candidateMoves = new List<Move>();
             Move m;
 
-            //Need to check if this piece is pinned.
 
 
             foreach (byte destination in availibleMoves)
             {
-                if (canBePinned && PinCheckByRay(b, origin, destination, b.ColorToMove))
+                if (canBePinned && PinCheckByRay(b, origin, destination, b.ColorToMove))            //Need to check if this piece is pinned.
+
                 {
                     //Do nothing, we're pinned
                 }
@@ -601,11 +608,11 @@ namespace Chess.Game
                     {
                         if (b.ColorToMove == Colors.White)
                         {
-                            m = new Move(Colors.White, b.GameBoard[origin], origin, destination, plIndex, b.GameBoard[destination - 8]);
+                            m = new Move(Colors.White, b.GameBoard[origin], origin, destination, plIndex, b.GameBoard[destination + 8]);
                         }
                         else
                         {
-                            m = new Move(Colors.Black, b.GameBoard[origin], origin, destination, plIndex, b.GameBoard[destination + 8]);
+                            m = new Move(Colors.Black, b.GameBoard[origin], origin, destination, plIndex, b.GameBoard[destination - 8]);
                         }
                         m.CaptureEnPassant = true;
                         candidateMoves.Add(m);

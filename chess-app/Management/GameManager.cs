@@ -63,17 +63,21 @@ namespace Chess.Management
             long nodes = 0;
 
             if (depth == 0) return 1;
+            Move m;
 
             List<Move> moves = MoveGeneration.GenerateLegalMoves(this.Board);
             int numberOfMoves = moves.Count();
 
             for (int i = 0; i < numberOfMoves; i++)
             {
-                //Console.WriteLine(moves[i].ToString().PadLeft(10 - depth));
-                this.Board.PlayMove(moves[i]);
+                m = moves[i];
+                //Console.WriteLine(m.ToString().PadLeft(10 - depth));
+                this.Board.PlayMove(m);
                 nodes += Perft(depth - 1);
                 this.Board.UndoMove(moves[i]);
             }
+           
+
             return nodes;
         }
 
@@ -81,18 +85,67 @@ namespace Chess.Management
         {
             long nodes = 0;
             long totalNodes = 0;
-            List<Move> moves = MoveGeneration.GenerateLegalMoves(this.Board);
-            if (moves.Count() == 0) Console.WriteLine("Checkmate!");
-            moves.Sort();
-            foreach(Move m in moves)
+#if DEBUG
+            Enums.Colors ColorToMove = Board.ColorToMove;
+            byte CastleMask = Board.CastleMask; //White Short - White Long - Black Short - Black Long
+            Enums.Squares EnPassantTarget = Board.EnPassantTarget;
+            bool InCheck = Board.InCheck;
+            bool CheckMate = Board.CheckMate;
+            byte[] KingSquares = Board.KingSquares;
+            string moveStr;
+
+            byte[] originalBoard = new byte[64];
+            List<ushort> originalPieceList = this.Board.PieceList.ConvertAll(x => x);
+            for (int i = 0; i < 64; i++)
             {
+                originalBoard[i] = this.Board.GameBoard[i];
+            }
+            Console.WriteLine("".PadLeft(10, '='));
+            this.PrintBoard();
+            Console.WriteLine("".PadLeft(10, '='));
+#endif
+            List<Move> moves = MoveGeneration.GenerateLegalMoves(this.Board);
+            moves.Sort();
+
+
+            foreach (Move m in moves)
+            {
+                moveStr = m.ToString();
                 nodes = 0;
+                //Console.WriteLine("Parent: " + moveStr);
                 this.Board.PlayMove(m);
                 nodes += Perft(depth - 1);
                 totalNodes += nodes;
                 this.Board.UndoMove(m);
+#if DEBUG
+                for (int i = 0; i < 64; i++)
+                {
+                    if (this.Board.GameBoard[i] != originalBoard[i])
+                    {
+                        Console.WriteLine("".PadLeft(10, '='));
+                        Console.WriteLine("Game board is mismatched after play/unplay at " + (Enums.Squares)i);
+                        Console.WriteLine("Original Board has " + originalBoard[i]);
+                        Console.WriteLine("Current board has " + this.Board.GameBoard[i]);
+                        this.PrintBoard();
+                        Console.WriteLine("".PadLeft(10,'='));
+                    }
+                }
+
+                if (originalPieceList.Count() != this.Board.PieceList.Count()) Console.WriteLine("Piecelist has extra/missing pieces");
+                foreach (ushort og in originalPieceList)
+                {
+                    if (!this.Board.PieceList.Contains(og)) Console.WriteLine("Piecelists are not identical");
+                }
+                if(ColorToMove != Board.ColorToMove) Console.WriteLine("Color to play desynced!");
+                if (CastleMask != Board.CastleMask) Console.WriteLine("Castle mask desynced!"); //White Short - White Long - Black Short - Black Long
+                if (EnPassantTarget != Board.EnPassantTarget) Console.WriteLine("EP target desynced!");
+                if (InCheck != Board.InCheck) Console.WriteLine("In check desynced!");
+                if (CheckMate != Board.CheckMate) Console.WriteLine("Checkmate desynced!");
+                if (KingSquares != Board.KingSquares) Console.WriteLine("King squares desynced!");
+#endif
                 Console.WriteLine(m.ToString() + ": " + nodes);
             }
+
             Console.WriteLine("Depth " + depth + "    Count: " + totalNodes);
             return nodes;
         }

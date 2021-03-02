@@ -9,17 +9,17 @@ namespace Chess.Game
     using static Enums;
     public class Move : IComparable<Move>
     {
-        public byte Piece { get; set; }
-        public int PieceListIndex { get; set; }
-        public byte PieceCaptured { get; set; }
-        public byte Origin { get; set; }
-        public byte Destination { get; set; }
-        public bool CaptureEnPassant { get; set; }
-        public byte PromoteIntoPiece { get; set; }
+        public byte Piece;
+        public int PieceListIndex;
+        public byte PieceCaptured;
+        public byte Origin;
+        public byte Destination;
+        public bool CaptureEnPassant;
+        public byte PromoteIntoPiece;
 
-        public CastleFlags CastleFlags { get; set; }
-        public Colors SideToMove { get; set; }
-        public Squares AllowsEnPassantTarget { get; set; }
+        public CastleFlags CastleFlags;
+        public Colors SideToMove;
+        public Squares AllowsEnPassantTarget;
 
         public Move(Colors sideToPlay, byte piece, byte origin, byte destination, int pieceListIndex=-1, byte pieceCaptured = 0, CastleFlags castleFlag = CastleFlags.None, Squares allowsEnPassantTarget = Squares.None, byte promoteIntoPiece = 0) 
         {

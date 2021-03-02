@@ -14,8 +14,8 @@ namespace Chess
         {
             GameManager gm = new GameManager("rnR2k1r/pp2bppp/1qpQ4/8/2B5/8/PPP1NnPP/RNB1K2R b KQ - 0 9");
 
-            //gm.RunPerft(5);
-            gm.PerftDivided(1);
+            gm.RunPerft(5);
+            //gm.PerftDivided(1);
             Console.ReadKey();
             /*for(int i = 0; i < 80; i++)
             {

@@ -85,6 +85,7 @@ namespace Chess.Management
         {
             long nodes = 0;
             long totalNodes = 0;
+            string moveStr;
 #if DEBUG
             Enums.Colors ColorToMove = Board.ColorToMove;
             byte CastleMask = Board.CastleMask; //White Short - White Long - Black Short - Black Long
@@ -92,7 +93,7 @@ namespace Chess.Management
             bool InCheck = Board.InCheck;
             bool CheckMate = Board.CheckMate;
             byte[] KingSquares = Board.KingSquares;
-            string moveStr;
+            
 
             byte[] originalBoard = new byte[64];
             List<ushort> originalPieceList = this.Board.PieceList.ConvertAll(x => x);

@@ -12,6 +12,7 @@ namespace Chess.Engine
     static public class Evaluation
 
     {
+        public const int MateValue = 50000;
         const int PawnValue = 100;
         const int BishopValue = 325;
         const int KnightValue = 325;

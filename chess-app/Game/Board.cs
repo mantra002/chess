@@ -14,17 +14,18 @@ namespace Chess.Game
         public Colors ColorToMove = Colors.White;
         public byte CastleMask = 0b0000; //White Short - White Long - Black Short - Black Long
         public Squares EnPassantTarget = Squares.None;
-        public Squares EnPassantTargetTimeZero = Squares.None;
+        private Squares EnPassantTargetTimeZero = Squares.None;
         public bool InCheck = false;
         public bool CheckMate = false;
         public List<ushort> PieceList = new List<ushort>(); //Formmatted as 0bLLLLLLLLPPPPPPCC L = Location; P = Piece; C = Color
         public Stack<Move> GameHistory = new Stack<Move>();
-        public Stack<List<ushort>[][]> AttackedSquaresHistory = new Stack<List<ushort>[][]>();
-        public Stack<List<ushort>[][]> AttackedSquaresWithoutPinsHistory = new Stack<List<ushort>[][]>();
+        private Stack<List<ushort>[][]> AttackedSquaresHistory = new Stack<List<ushort>[][]>();
+        private Stack<List<ushort>[][]> AttackedSquaresWithoutPinsHistory = new Stack<List<ushort>[][]>();
         public Stack<byte> CastleMaskHistory = new Stack<byte>();
         public List<ushort>[][] AttackedSquares = new List<ushort>[2][];
         public List<ushort>[][] AttackedSquaresWithoutPins = new List<ushort>[2][];
         public byte[] KingSquares = new byte[2];
+        public ulong ZobristHash;
 
         public short Ply = 0;
         public byte FiftyMoveCounter = 0; //In Ply
@@ -39,8 +40,7 @@ namespace Chess.Game
         {
             GameBoard[location] = piece;
             if(piece != 0) PieceList.Add(EncodePieceForPieceList(piece, location));
-            if ((byte)piece == ((byte)PieceNames.King | (byte)Colors.White)) KingSquares[1] = location;
-            if ((byte)piece == ((byte)PieceNames.King | (byte)Colors.Black)) KingSquares[0] = location;
+            ZobristPiece(piece, location);
         }
         public void RemovePiece(byte piece, byte location, int index = -1)
         {
@@ -49,6 +49,67 @@ namespace Chess.Game
             //else 
             if(piece != 0) PieceList.Remove(EncodePieceForPieceList(piece, location));
             GameBoard[location] = 0;
+            ZobristPiece(piece, location);
+        }
+
+        private void ZobristPiece(byte piece, byte location)
+        {
+            if (((byte)piece & (byte)Colors.White) != 0)
+            {
+                if (((byte)piece & (byte)PieceNames.Pawn) != 0)
+                {
+                    ZobristHash ^= Game.ZobristHash.PieceKeys[location][1][0];
+                }
+                else if (((byte)piece & (byte)PieceNames.Knight) != 0)
+                {
+                    ZobristHash ^= Game.ZobristHash.PieceKeys[location][1][1];
+                }
+                else if (((byte)piece & (byte)PieceNames.Bishop) != 0)
+                {
+                    ZobristHash ^= Game.ZobristHash.PieceKeys[location][1][2];
+                }
+                else if (((byte)piece & (byte)PieceNames.Rook) != 0)
+                {
+                    ZobristHash ^= Game.ZobristHash.PieceKeys[location][1][3];
+                }
+                else if (((byte)piece & (byte)PieceNames.Queen) != 0)
+                {
+                    ZobristHash ^= Game.ZobristHash.PieceKeys[location][1][4];
+                }
+                else if (((byte)piece & (byte)PieceNames.King) != 0)
+                {
+                    ZobristHash ^= Game.ZobristHash.PieceKeys[location][1][5];
+                    KingSquares[1] = location;
+                }
+            }
+            else
+            {
+                if (((byte)piece & (byte)PieceNames.Pawn) != 0)
+                {
+                    ZobristHash ^= Game.ZobristHash.PieceKeys[location][0][0];
+                }
+                else if (((byte)piece & (byte)PieceNames.Knight) != 0)
+                {
+                    ZobristHash ^= Game.ZobristHash.PieceKeys[location][0][1];
+                }
+                else if (((byte)piece & (byte)PieceNames.Bishop) != 0)
+                {
+                    ZobristHash ^= Game.ZobristHash.PieceKeys[location][0][2];
+                }
+                else if (((byte)piece & (byte)PieceNames.Rook) != 0)
+                {
+                    ZobristHash ^= Game.ZobristHash.PieceKeys[location][0][3];
+                }
+                else if (((byte)piece & (byte)PieceNames.Queen) != 0)
+                {
+                    ZobristHash ^= Game.ZobristHash.PieceKeys[location][0][4];
+                }
+                else if (((byte)piece & (byte)PieceNames.King) != 0)
+                {
+                    ZobristHash ^= Game.ZobristHash.PieceKeys[location][0][5];
+                    KingSquares[0] = location;
+                }
+            }
         }
 
         public void PlayMove(Move move)
@@ -56,6 +117,9 @@ namespace Chess.Game
             if (CheckMate) return;
             AttackedSquaresHistory.Push(AttackedSquares);
             AttackedSquaresWithoutPinsHistory.Push(AttackedSquaresWithoutPins);
+
+            ZobristHash ^= Game.ZobristHash.CastleKeys[CastleMask];
+            if(this.EnPassantTarget != Squares.None) ZobristHash ^= Game.ZobristHash.EpKeys[(byte)this.EnPassantTarget];
 
             Ply++;
             GameHistory.Push(move);
@@ -192,7 +256,10 @@ namespace Chess.Game
                 //InCheck = AttackedSquares[1][KingSquares[0]];
                 ColorToMove = Colors.White;
             }
+            ZobristHash ^= Game.ZobristHash.CastleKeys[CastleMask];
+            ZobristHash ^= Game.ZobristHash.BlackToPlay;
             EnPassantTarget = move.AllowsEnPassantTarget;
+            if (this.EnPassantTarget != Squares.None) ZobristHash ^= Game.ZobristHash.EpKeys[(byte)this.EnPassantTarget];
         }
 
         public void UndoMove(Move move)
@@ -200,6 +267,8 @@ namespace Chess.Game
             Ply--;
             if (CheckMate) CheckMate = false;
             if (InCheck) InCheck = false;
+            ZobristHash ^= Game.ZobristHash.CastleKeys[CastleMask];
+            if (this.EnPassantTarget != Squares.None) ZobristHash ^= Game.ZobristHash.EpKeys[(byte)this.EnPassantTarget];
             if (move.CastleFlags == CastleFlags.None)
             {
                 if (move.PromoteIntoPiece != 0) //If promotion
@@ -279,8 +348,14 @@ namespace Chess.Game
                 }
             }
 
-            if (ColorToMove == Colors.White) ColorToMove = Colors.Black;
-            else ColorToMove = Colors.White;
+            if (ColorToMove == Colors.White)
+            {
+                ColorToMove = Colors.Black;
+            }
+            else
+            {
+                ColorToMove = Colors.White;
+            }
 
             if (Ply == 0)
             {
@@ -290,7 +365,11 @@ namespace Chess.Game
             else EnPassantTarget = GameHistory.Pop().AllowsEnPassantTarget;
             AttackedSquares = AttackedSquaresHistory.Pop();
             AttackedSquaresWithoutPins = AttackedSquaresWithoutPinsHistory.Pop();
+            
             CastleMask = CastleMaskHistory.Pop();
+            ZobristHash ^= Game.ZobristHash.CastleKeys[CastleMask];
+            ZobristHash ^= Game.ZobristHash.BlackToPlay;
+            if (this.EnPassantTarget != Squares.None) ZobristHash ^= Game.ZobristHash.EpKeys[(byte)this.EnPassantTarget];
         }
 
         private void LoadFEN(string fen)
@@ -365,15 +444,18 @@ namespace Chess.Game
             else
             {
                 ColorToMove = Colors.Black;
+                ZobristHash ^= Game.ZobristHash.BlackToPlay;
             }
+            ZobristHash ^= Game.ZobristHash.CastleKeys[this.CastleMask];
+            if (this.EnPassantTarget != Enums.Squares.None) ZobristHash ^= Game.ZobristHash.EpKeys[(byte)this.EnPassantTarget];
         }
 
-        public void NewBoard(string fen)
+        public void NewBoard(string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
         {
             LoadFEN(fen);
         }
 
-        public void ClearBoard()
+        private void ClearBoard()
         {
             GameBoard = new byte[64];
             PieceList = new List<ushort>();
@@ -385,7 +467,8 @@ namespace Chess.Game
             CastleMaskHistory.Clear();
             InCheck = false;
             CheckMate = false;
-            FiftyMoveCounter = 0;
+            FiftyMoveCounter = 0; //Not functional
+            ZobristHash = 0;
         }
 
         public override string ToString()
@@ -422,14 +505,14 @@ namespace Chess.Game
             return String.Concat(file, rank);
         }
 
-        public static int GetRank(byte index)
+        public static byte GetRank(byte index)
         {
-            return 8-(index / 8);
+            return (byte)(8-(index / 8));
         }
 
-        public static int GetFile(byte index)
+        public static byte GetFile(byte index)
         {
-            return index % 8 + 1;
+            return (byte)(index % 8 + 1);
         }
 
         public static ushort EncodePieceForPieceList(byte piece, byte location)

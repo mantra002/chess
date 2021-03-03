@@ -9,7 +9,13 @@ namespace Chess.Game
     using static Enums;
     public static class MoveGeneration
     {
-        public static List<Move> GenerateLegalMoves(Board b)
+        public enum PromotionAllowed
+        {
+            All,
+            QueenOrKnight,
+            QueenOnly
+        }
+        public static List<Move> GenerateLegalMoves(Board b, PromotionAllowed promo = PromotionAllowed.All)
         {
             List<Move> candidateMoves = new List<Move>();
             byte decodePiece;
@@ -44,7 +50,7 @@ namespace Chess.Game
             }
             if (CheckForCheck(b))
             {
-                candidateMoves = GenerateCheckEvasion(b);
+                candidateMoves = GenerateCheckEvasion(b, promo);
                 if (candidateMoves.Count() == 0) b.CheckMate = true;
                 return candidateMoves;
             }
@@ -69,7 +75,7 @@ namespace Chess.Game
                         }
 
                         candidateMoves.AddRange(GenerateMoves(b, decodeLocation, MoveData.AvailiblePawnAttacksWhite[decodeLocation], index, true, false, isPawn: true));
-                        candidateMoves.AddRange(GenerateMoves(b, decodeLocation, pawnMoves, index, false, isPawn: true));
+                        candidateMoves.AddRange(GenerateMoves(b, decodeLocation, pawnMoves, index, false, isPawn: true, promo: promo));
                     }
                     else if ((decodePiece & (byte)PieceNames.Pawn) == (byte)PieceNames.Pawn && b.ColorToMove == Colors.Black)
                     {
@@ -110,7 +116,7 @@ namespace Chess.Game
 
             return candidateMoves;
         }
-        private static List<Move> GenerateCheckEvasion(Board b)
+        private static List<Move> GenerateCheckEvasion(Board b, PromotionAllowed promo = PromotionAllowed.All)
         {
             byte opponentColor = (byte)(2 - (byte)b.ColorToMove);
             byte kingSquare = b.KingSquares[(byte)b.ColorToMove - 1];
@@ -173,7 +179,7 @@ namespace Chess.Game
                                 }
                                 if (pawnMoves.Contains(bSquare))
                                 {
-                                    candidateMoves.Add(GenerateMoves(b, decodeLocationPl, pawnMoves, index, false).Find(x => x.Destination == bSquare));
+                                    candidateMoves.Add(GenerateMoves(b, decodeLocationPl, pawnMoves, index, false, isPawn: true, promo: promo).Find(x => x.Destination == bSquare));
                                 }
                             }
                             else
@@ -185,7 +191,7 @@ namespace Chess.Game
                                 }
                                 if (pawnMoves.Contains(bSquare))
                                 {
-                                    Move mPawn = GenerateMoves(b, decodeLocationPl, pawnMoves, index, false).Find(x => x.Destination == bSquare);
+                                    Move mPawn = GenerateMoves(b, decodeLocationPl, pawnMoves, index, false, isPawn: true, promo: promo).Find(x => x.Destination == bSquare);
                                     if (mPawn.Destination == bSquare) candidateMoves.Add(mPawn);
                                 }
                             }
@@ -200,12 +206,41 @@ namespace Chess.Game
             {
                 foreach (ushort defendingPiece in b.AttackedSquares[(byte)b.ColorToMove - 1][decodeLocation])
                 {
-                    byte decodeDefendPos = Board.DecodeLocationFromPieceList(defendingPiece);
-                    if ((defendingPiece & (byte)PieceNames.King) != (byte)PieceNames.King && !PinCheckByRay(b, decodeDefendPos, decodeLocation, b.ColorToMove))
+                    decodeDefenderPos = Board.DecodeLocationFromPieceList(defendingPiece);
+                    decodeDefender = Board.DecodePieceFromPieceList(defendingPiece);
+                    if ((defendingPiece & (byte)PieceNames.King) != (byte)PieceNames.King && (defendingPiece & (byte)PieceNames.Pawn) != (byte)PieceNames.Pawn && !PinCheckByRay(b, decodeDefenderPos, decodeLocation, b.ColorToMove))
                     {
-                        decodeDefender = Board.DecodePieceFromPieceList(defendingPiece);
-                        m = new Move(b.ColorToMove, decodeDefender, decodeDefendPos, decodeLocation, pieceCaptured: decodePiece);
+                        m = new Move(b.ColorToMove, decodeDefender, decodeDefenderPos, decodeLocation, pieceCaptured: decodePiece);
                         candidateMoves.Add(m);
+                    }
+                    else if ((defendingPiece & (byte)PieceNames.Pawn) == (byte)PieceNames.Pawn && !PinCheckByRay(b, decodeDefenderPos, decodeLocation, b.ColorToMove))
+                    {
+                        
+                        if (((b.ColorToMove == Colors.White && decodeDefenderPos < 8) || (b.ColorToMove == Colors.Black && decodeDefenderPos > 55)))
+                        {
+                            if (promo == PromotionAllowed.All)
+                            {
+                                for (int i = 1; i < 5; i++)
+                                {
+                                    m = new Move(b.ColorToMove, decodeDefender, decodeDefenderPos, decodeLocation, pieceCaptured: decodePiece, promoteIntoPiece: (byte)((byte)(2 * Math.Pow(2, i)) | (byte)b.ColorToMove));
+                                    candidateMoves.Add(m);
+                                }
+                            }
+                            else if (promo == PromotionAllowed.QueenOrKnight)
+                            {
+                                candidateMoves.Add(new Move(b.ColorToMove, decodeDefender, decodeDefenderPos, decodeLocation, pieceCaptured: decodePiece, promoteIntoPiece: (byte)((byte)PieceNames.Queen | (byte)b.ColorToMove)));
+                                candidateMoves.Add(new Move(b.ColorToMove, decodeDefender, decodeDefenderPos, decodeLocation, pieceCaptured: decodePiece, promoteIntoPiece: (byte)((byte)PieceNames.Knight | (byte)b.ColorToMove)));
+                            }
+                            else if (promo == PromotionAllowed.QueenOnly)
+                            {
+                                candidateMoves.Add(new Move(b.ColorToMove, decodeDefender, decodeDefenderPos, decodeLocation, pieceCaptured: decodePiece, promoteIntoPiece: (byte)((byte)PieceNames.Queen | (byte)b.ColorToMove)));
+                            }
+                        }
+                        else
+                        {
+                            m = new Move(b.ColorToMove, decodeDefender, decodeDefenderPos, decodeLocation, pieceCaptured: decodePiece);
+                            candidateMoves.Add(m);
+                        }
                     }
                 }
             }
@@ -583,7 +618,7 @@ namespace Chess.Game
             }
             return false;
         }
-        private static List<Move> GenerateMoves(Board b, byte origin, short[] availibleMoves, int plIndex = -1, bool includeCaptures = true, bool includeQuietMoves = true, bool canBePinned = true, bool allowMoveIntoCheck = true, bool isPawn = false)
+        private static List<Move> GenerateMoves(Board b, byte origin, short[] availibleMoves, int plIndex = -1, bool includeCaptures = true, bool includeQuietMoves = true, bool canBePinned = true, bool allowMoveIntoCheck = true, bool isPawn = false, PromotionAllowed promo = PromotionAllowed.All)
         {
             byte destinationPiece;
             bool alreadyLoggedMoves = false;
@@ -639,10 +674,22 @@ namespace Chess.Game
                                 if ((b.ColorToMove == Colors.White && destination < 8) || (b.ColorToMove == Colors.Black && destination > 55))
                                 {
                                     alreadyLoggedMoves = true;
-                                    for (int i = 1; i < 5; i++)
+                                    if (promo == PromotionAllowed.All)
                                     {
-                                        m = new Move(b.ColorToMove, b.GameBoard[origin], origin, destination, plIndex, promoteIntoPiece: (byte)((byte)(2 * Math.Pow(2, i)) | (byte) b.ColorToMove));
-                                        candidateMoves.Add(m);
+                                        for (int i = 1; i < 5; i++)
+                                        {
+                                            m = new Move(b.ColorToMove, b.GameBoard[origin], origin, destination, plIndex, promoteIntoPiece: (byte)((byte)(2 * Math.Pow(2, i)) | (byte)b.ColorToMove));
+                                            candidateMoves.Add(m);
+                                        }
+                                    }
+                                    else if (promo == PromotionAllowed.QueenOrKnight)
+                                    {
+                                        candidateMoves.Add(new Move(b.ColorToMove, b.GameBoard[origin], origin, destination, plIndex, promoteIntoPiece: (byte)((byte)PieceNames.Queen | (byte)b.ColorToMove)));
+                                        candidateMoves.Add(new Move(b.ColorToMove, b.GameBoard[origin], origin, destination, plIndex, promoteIntoPiece: (byte)((byte)PieceNames.Knight | (byte)b.ColorToMove)));
+                                    }
+                                    else if (promo == PromotionAllowed.QueenOnly)
+                                    {
+                                        candidateMoves.Add(new Move(b.ColorToMove, b.GameBoard[origin], origin, destination, plIndex, promoteIntoPiece: (byte)((byte)PieceNames.Queen | (byte)b.ColorToMove)));
                                     }
                                 }
                             }
@@ -663,10 +710,22 @@ namespace Chess.Game
                             {
 
                                 alreadyLoggedMoves = true;
-                                for (int i = 1; i < 5; i++)
+                                if (promo == PromotionAllowed.All)
                                 {
-                                    m = new Move(b.ColorToMove, b.GameBoard[origin], origin, destination, plIndex, destinationPiece, promoteIntoPiece: (byte)((byte)(2 * Math.Pow(2, i)) | (byte)b.ColorToMove));
-                                    candidateMoves.Add(m);
+                                    for (int i = 1; i < 5; i++)
+                                    {
+                                        m = new Move(b.ColorToMove, b.GameBoard[origin], origin, destination, plIndex, destinationPiece, promoteIntoPiece: (byte)((byte)(2 * Math.Pow(2, i)) | (byte)b.ColorToMove));
+                                        candidateMoves.Add(m);
+                                    }
+                                }
+                                else if(promo == PromotionAllowed.QueenOrKnight)
+                                {
+                                    candidateMoves.Add(new Move(b.ColorToMove, b.GameBoard[origin], origin, destination, plIndex, destinationPiece, promoteIntoPiece: (byte)((byte)PieceNames.Queen | (byte)b.ColorToMove)));
+                                    candidateMoves.Add(new Move(b.ColorToMove, b.GameBoard[origin], origin, destination, plIndex, destinationPiece, promoteIntoPiece: (byte)((byte)PieceNames.Knight | (byte)b.ColorToMove)));
+                                }
+                                else if(promo == PromotionAllowed.QueenOnly)
+                                {
+                                    candidateMoves.Add(new Move(b.ColorToMove, b.GameBoard[origin], origin, destination, plIndex, destinationPiece, promoteIntoPiece: (byte)((byte)PieceNames.Queen | (byte)b.ColorToMove)));
                                 }
                             }
                             else

@@ -82,12 +82,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Engine\Evaluation.cs" />
+    <Compile Include="Engine\PieceSquareTable.cs" />
+    <Compile Include="Engine\SearchSettings.cs" />
+    <Compile Include="Engine\TranspositionTable.cs" />
     <Compile Include="Game\Board.cs" />
     <Compile Include="Game\Enums.cs" />
     <Compile Include="Game\Move.cs" />
     <Compile Include="Game\MoveData.cs" />
     <Compile Include="Game\MoveGeneration.cs" />
     <Compile Include="Game\Pieces.cs" />
+    <Compile Include="Game\ZobristHash.cs" />
+    <Compile Include="Interface\UCI.cs" />
     <Compile Include="Management\GameManager.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -96,6 +102,8 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
+    <Compile Include="Engine\MoveOrder.cs" />
+    <Compile Include="Engine\Search.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -111,5 +119,6 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

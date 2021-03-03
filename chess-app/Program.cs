@@ -11,22 +11,21 @@ namespace Chess
     class Program
     {
         static void Main(string[] args)
-        {
-            GameManager gm = new GameManager("rnR2k1r/pp2bppp/1qpQ4/8/2B5/8/PPP1NnPP/RNB1K2R b KQ - 0 9");
 
-            gm.RunPerft(5);
-            //gm.PerftDivided(1);
-            Console.ReadKey();
-            /*for(int i = 0; i < 80; i++)
+        { 
+            GameManager gm = new GameManager("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+            string textMove;
+            for(int i = 0; i < 80; i++)
             {
-                gm.GenerateAndPlayRandomMove();
+                Console.WriteLine("Z Hash: " + gm.Board.ZobristHash);
+                Console.WriteLine("Eval: " + Engine.Evaluation.Evaluate(gm.Board));
                 gm.PrintBoard();
                 Console.Write("Move? : ");
                 textMove = Console.ReadLine();
-                if (textMove.ToUpper() == "UNDO") gm.UnplayMoves(2);
+                if (textMove.ToUpper() == "UNDO") gm.UnplayMoves(1);
+                else if (textMove.ToUpper() == "AUTO") gm.GenerateAndPlayRandomMove();
                 else gm.PlayMove(textMove);
-                gm.PrintBoard();
-            }*/
+            }
 
         }
     }

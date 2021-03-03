@@ -9,12 +9,13 @@ namespace Chess.Engine
     using Chess.Game;
     public class Search
     {
-        const short TargetDepth = 8;
+        const short TargetDepth = 5;
         const bool IterativeDeepening = true;
         Board board;
-        int bestEval;
-        Move bestMove;
+        int BestEval;
+        Move BestMove;
         int bestIterativeEval;
+        long NodesChecked = 0;
         Move bestIterativeMove;
 
         public Search(Board b)
@@ -24,31 +25,33 @@ namespace Chess.Engine
 
         public void StartSearch()
         {
-            bestEval = bestIterativeEval = 0;
-            bestMove = bestIterativeMove = null;
+            NodesChecked = 0;
+            BestEval = bestIterativeEval = 0;
+            BestMove = bestIterativeMove = null;
 
             if(IterativeDeepening)
             {
                 for(int i = 1; i <= TargetDepth; i++)
                 {
-                    DoSearch(i, 0, int.MinValue, int.MaxValue);
-                    Console.WriteLine("Depth: " + i + " Move: " + bestIterativeMove.ToString() + " Score: " + bestIterativeEval);
+                    DoSearch(i, 0, -200000, 200000);
+                    Console.WriteLine("Depth: " + i + " Nodes: " + NodesChecked + " Move: " + bestIterativeMove.ToString() + " Score: " + bestIterativeEval);
                 }
-                bestMove = bestIterativeMove;
-                bestEval = bestIterativeEval;
+                BestMove = bestIterativeMove;
+                BestEval = bestIterativeEval;
 
             }
             else
             {
-                DoSearch(TargetDepth, 0, int.MinValue, int.MaxValue);
-                bestMove = bestIterativeMove;
-                bestEval = bestIterativeEval;
+                DoSearch(TargetDepth, 0, -200000, 200000);
+                BestMove = bestIterativeMove;
+                BestEval = bestIterativeEval;
             }
         }
 
         public int DoSearch(int depth, int currentPly, int alpha, int beta)
         {
             int score;
+            NodesChecked++;
             if (depth == 0) return Evaluation.Evaluate(board);
 
             List<Move> moves = MoveGeneration.GenerateLegalMoves(this.board);
@@ -56,7 +59,7 @@ namespace Chess.Engine
             {
                 if (this.board.InCheck)
                 {
-                    return Evaluation.MateValue - currentPly;
+                    return -Evaluation.MateValue + currentPly;
                 }
                 return 0;
             }
@@ -74,7 +77,7 @@ namespace Chess.Engine
                 if(score > alpha)
                 {
                     alpha = score;
-                    if(currentPly ==0)
+                    if(currentPly == 0)
                     {
                         bestIterativeEval = score;
                         bestIterativeMove = moves[i];
@@ -86,7 +89,7 @@ namespace Chess.Engine
 
         public (int score, Move m) CurrentSearchResult()
         {
-            return (bestEval, bestMove);
+            return (BestEval, BestMove);
         }
     }
 }

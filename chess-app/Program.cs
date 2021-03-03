@@ -14,8 +14,10 @@ namespace Chess
         static void Main(string[] args)
 
         { 
-            GameManager gm = new GameManager("r3kb1r/ppp1ppp1/2n2n1p/qB4B1/3P2b1/2N2N2/PPP2PPP/R2Q1RK1 b kq - 1 8");
-            Search s = new Search(gm.Board);
+            Board b = new Board("k7/8/8/8/8/8/2Q5/1Q5K w - - 0 1");
+            GameManager gameManager = new GameManager(b);
+            gameManager.RunPerft(5);
+            Search s = new Search(b);
             s.StartSearch();
 
             Console.ReadKey();

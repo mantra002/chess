@@ -12,9 +12,13 @@ namespace Chess.Management
         public Board Board;
         public Random r;
 
-        public GameManager(string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+        public GameManager(string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") : this(new Board(fen))
         {
-            Board = new Board(fen);
+        }
+
+        public GameManager(Board b)
+        {
+            Board = b;
             r = new Random();
         }
         public void GenerateAndPlayRandomMove()
@@ -62,7 +66,10 @@ namespace Chess.Management
         {
             long nodes = 0;
 
-            if (depth == 0) return 1;
+            if (depth == 0)
+            {
+                return 1;
+            }
             Move m;
 
             List<Move> moves = MoveGeneration.GenerateLegalMoves(this.Board);

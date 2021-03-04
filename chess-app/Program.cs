@@ -19,7 +19,7 @@ namespace Chess
             s.StartSearch();
             //GameManager gm = new GameManager();
             //gm.RunPerft(5);
-            Console.ReadKey();
+            //Console.ReadKey();
             //string textMove;
             //for(int i = 0; i < 80; i++)
             //{

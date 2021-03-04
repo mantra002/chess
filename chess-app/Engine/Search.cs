@@ -13,8 +13,9 @@ namespace Chess.Engine
 
     public class Search
     {
-        const short TargetDepth = 8;
-        const bool IterativeDeepening = true;
+        const short TargetDepth = 5;
+        const bool IterativeDeepeningEnable = true;
+        const bool QuiescenceSearchEnable = true;
         Board board;
         int BestEval;
         Move BestMove;
@@ -27,12 +28,15 @@ namespace Chess.Engine
         const int PositiveInfinity = 9999999;
         const int NegativeInfinity = -PositiveInfinity;
 
+        List<Move> PrincipalVariation;
+
         Move BestMoveSoFar;
         int BestEvalSoFar;
 
         int numNodes;
         int numCutoffCount;
         int numTTHit;
+        int qDepth;
 
 
         public Search(Board b)
@@ -43,18 +47,19 @@ namespace Chess.Engine
 
         public void StartSearch()
         {
-            numTTHit = numCutoffCount = numNodes =0;
+            PrincipalVariation = new List<Move>();
+            numTTHit = numCutoffCount = numNodes = 0;
   
-            BestEval = bestIterativeScore = 0;
+            BestEval = bestIterativeScore = qDepth = 0;
             BestMove = bestIterativeMove = null;
 
-            if(IterativeDeepening)
+            if(IterativeDeepeningEnable)
             {
                 for(int i = 1; i <= TargetDepth; i++)
                 {
                     DoSearch(i, 0, NegativeInfinity, PositiveInfinity);
 
-                    Console.WriteLine("Depth: " + i + " Nodes: " + numNodes + " TT Hits: " + numTTHit + " Cutoffs: " + numCutoffCount + " Move: " + BestMoveSoFar.ToString() + " Score: " + BestEvalSoFar);
+                    Console.WriteLine("Depth: " + i + "/" + qDepth + " Nodes: " + numNodes + " TT Hits: " + numTTHit + " Cutoffs: " + numCutoffCount + " Move: " + BestMoveSoFar.ToString() + " Score: " + BestEvalSoFar);
                 }
                 BestMove = BestMoveSoFar;
                 BestEval = BestEvalSoFar;
@@ -68,10 +73,8 @@ namespace Chess.Engine
                 BestEval = BestEvalSoFar;
             }
         }
-        int DoSearch(int depth, int plyFromRoot, int alpha, int beta)
+        private int DoSearch(int depth, int plyFromRoot, int alpha, int beta)
         {
- 
-
             if (plyFromRoot > 0)
             {
                 alpha = Max(alpha, -MateScore + plyFromRoot);
@@ -97,8 +100,8 @@ namespace Chess.Engine
 
             if (depth == 0)
             {
-                int evaluation = Evaluation.Evaluate(board);
-                return evaluation;
+                if(QuiescenceSearchEnable) return QuiescenceSearch(alpha, beta, plyFromRoot+1);
+                else return Evaluation.Evaluate(board);
             }
 
             List<Move> moves = MoveGeneration.GenerateLegalMoves(board);
@@ -162,6 +165,44 @@ namespace Chess.Engine
                 mateInPly = Evaluation.MateValue - Math.Abs(BestEval);
             }
             return (BestEval, BestMove, mateInPly);
+        }
+
+        private int QuiescenceSearch(int alpha, int beta, int plyFromRoot)
+        {
+            qDepth = Max(plyFromRoot, qDepth);
+            int eval = Evaluation.Evaluate(board);
+
+            if (eval >= beta)
+            {
+                return beta;
+            }
+            if (eval > alpha)
+            {
+                alpha = eval;
+            }
+
+            List<Move> moves = MoveGeneration.GenerateLegalMoves(board, includeQuietMoves: false);
+            //Order moves
+            for (int i = 0; i < moves.Count; i++)
+            {
+                board.PlayMove(moves[i]);
+                eval = -QuiescenceSearch(-beta, -alpha, plyFromRoot+1);
+                board.UndoMove(moves[i]);
+                this.numNodes++;
+
+                if (eval >= beta)
+                {
+                    this.numCutoffCount++;
+                    return beta;
+                }
+                if (eval > alpha)
+                {
+                    alpha = eval;
+                }
+            }
+
+            return alpha;
+
         }
     }
 }

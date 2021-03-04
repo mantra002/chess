@@ -122,12 +122,13 @@ namespace Chess.Engine
             }
             if (bishopCountBlack > 1) score -= BishopPairValue;
             if (bishopCountWhite > 1) score += BishopPairValue;
-            score += RookPawnPenalty * (pawnCountWhite-5);
-            score -= RookPawnPenalty * (pawnCountBlack - 5);
-            score += KnightPawnBonus * (pawnCountWhite - 5);
-            score -= KnightPawnBonus * (pawnCountBlack - 5);
+            score += RookPawnPenalty * (pawnCountWhite-5) * rookCountWhite;
+            score -= RookPawnPenalty * (pawnCountBlack - 5) * rookCountBlack;
+            score += KnightPawnBonus * (pawnCountWhite - 5) * knightCountWhite;
+            score -= KnightPawnBonus * (pawnCountBlack - 5) * knightCountBlack;
 
-            return score;
+            if (b.ColorToMove == Colors.Black) return -score;
+            else return score;
         }
 
 

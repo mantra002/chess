@@ -3,93 +3,146 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Math;
 
 namespace Chess.Engine
 {
     using Chess.Game;
     public class Search
     {
-        const short TargetDepth = 5;
+        const short TargetDepth = 10;
         const bool IterativeDeepening = true;
         Board board;
         int BestEval;
         Move BestMove;
-        int bestIterativeEval;
-        long NodesChecked = 0;
         Move bestIterativeMove;
+        int bestIterativeScore;
+        long ttHits = 0;
+        TranspositionTable tt;
+
+        const int MateScore = 100000;
+        const int PositiveInfinity = 9999999;
+        const int NegativeInfinity = -PositiveInfinity;
+
+        Move BestMoveSoFar;
+        int BestEvalSoFar;
+
+        int numNodes;
+        int numCutoffCount;
+        int numTTHit;
+
 
         public Search(Board b)
         {
             this.board = b;
+            tt = new TranspositionTable();
         }
 
         public void StartSearch()
         {
-            NodesChecked = 0;
-            BestEval = bestIterativeEval = 0;
+            numTTHit = numCutoffCount = numNodes =0;
+  
+            BestEval = bestIterativeScore = 0;
             BestMove = bestIterativeMove = null;
 
             if(IterativeDeepening)
             {
                 for(int i = 1; i <= TargetDepth; i++)
                 {
-                    DoSearch(i, 0, -200000, 200000);
-                    Console.WriteLine("Depth: " + i + " Nodes: " + NodesChecked + " Move: " + bestIterativeMove.ToString() + " Score: " + bestIterativeEval);
+                    DoSearch(i, 0, NegativeInfinity, PositiveInfinity);
+
+                    Console.WriteLine("Depth: " + i + " Nodes: " + numNodes + " TT Hits: " + ttHits +" Cutoffs: " + numCutoffCount + " Move: " + BestMoveSoFar.ToString() + " Score: " + BestEvalSoFar);
                 }
-                BestMove = bestIterativeMove;
-                BestEval = bestIterativeEval;
+                BestMove = BestMoveSoFar;
+                BestEval = BestEvalSoFar;
 
             }
             else
             {
-                DoSearch(TargetDepth, 0, -200000, 200000);
-                BestMove = bestIterativeMove;
-                BestEval = bestIterativeEval;
+                DoSearch (TargetDepth, 0, NegativeInfinity, PositiveInfinity);
+                Console.WriteLine("Depth: " + TargetDepth + " Nodes: " + numNodes + " TT Hits: " + ttHits + " Cutoffs: " + numCutoffCount+ " Move: " + BestMoveSoFar.ToString() + " Score: " + BestEvalSoFar);
+                BestMove = BestMoveSoFar;
+                BestEval = BestEvalSoFar;
             }
         }
-
-        public int DoSearch(int depth, int currentPly, int alpha, int beta)
+        int DoSearch(int depth, int plyFromRoot, int alpha, int beta)
         {
-            int score;
-            NodesChecked++;
-            if (depth == 0) return Evaluation.Evaluate(board);
+ 
 
-            List<Move> moves = MoveGeneration.GenerateLegalMoves(this.board);
-            if(moves.Count == 0)
+            if (plyFromRoot > 0)
             {
-                if (this.board.InCheck)
+                alpha = Max(alpha, -MateScore + plyFromRoot);
+                beta = Min(beta, MateScore - plyFromRoot);
+                if (alpha >= beta)
                 {
-                    return -Evaluation.MateValue + currentPly;
+                    return alpha;
                 }
-                return 0;
             }
-            for(int i = 0; i< moves.Count; i ++)
-            {
-                this.board.PlayMove(moves[i]);
-                score = -DoSearch(depth - 1, currentPly + 1, -beta, -alpha);
-                this.board.UndoMove(moves[i]);
 
-                if(score >= beta)
+            if (depth == 0)
+            {
+                int evaluation = Evaluation.Evaluate(board);
+                return evaluation;
+            }
+
+            List<Move> moves = MoveGeneration.GenerateLegalMoves(board);
+            // Detect checkmate and stalemate when no legal moves are available
+            if (moves.Count == 0)
+            {
+                if (board.InCheck)
                 {
+                    int mateScore = MateScore - plyFromRoot;
+                    return -mateScore;
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+
+            Move bestMoveInThisPosition = null;
+
+            for (int i = 0; i < moves.Count; i++)
+            {
+                board.PlayMove(moves[i]);
+                int eval = -DoSearch(depth - 1, plyFromRoot + 1, -beta, -alpha);
+                board.UndoMove(moves[i]);
+                numNodes++;
+
+                // Move was *too* good, so opponent won't allow this position to be reached
+                // (by choosing a different move earlier on). Skip remaining moves.
+                if (eval >= beta)
+                {
+                    numCutoffCount++;
                     return beta;
                 }
 
-                if(score > alpha)
+                // Found a new best move in this position
+                if (eval > alpha)
                 {
-                    alpha = score;
-                    if(currentPly == 0)
+                    bestMoveInThisPosition = moves[i];
+
+                    alpha = eval;
+                    if (plyFromRoot == 0)
                     {
-                        bestIterativeEval = score;
-                        bestIterativeMove = moves[i];
+                        BestMoveSoFar = moves[i];
+                        BestEvalSoFar = eval;
                     }
                 }
             }
-            return alpha;
-        }
 
-        public (int score, Move m) CurrentSearchResult()
+            return alpha;
+
+        }
+     
+        public (int score, Move m, int MateInPly) CurrentSearchResult()
         {
-            return (BestEval, BestMove);
+            int mateInPly = -1;
+            if (Math.Abs(BestEval) > Evaluation.MateValue - 1000)
+            {
+                mateInPly = Evaluation.MateValue - Math.Abs(BestEval);
+            }
+            return (BestEval, BestMove, mateInPly);
         }
     }
 }

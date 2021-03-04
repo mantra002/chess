@@ -13,13 +13,12 @@ namespace Chess
     {
         static void Main(string[] args)
 
-        { 
-            Board b = new Board("k7/8/8/8/8/8/2Q5/1Q5K w - - 0 1");
-            GameManager gameManager = new GameManager(b);
-            gameManager.RunPerft(5);
+        {
+            Board b = new Board("5k2/8/8/2r5/8/8/8/3KQ3 w - - 0 1");
             Search s = new Search(b);
             s.StartSearch();
-
+            //GameManager gm = new GameManager();
+            //gm.RunPerft(5);
             Console.ReadKey();
             //string textMove;
             //for(int i = 0; i < 80; i++)

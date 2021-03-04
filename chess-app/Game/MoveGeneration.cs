@@ -17,7 +17,10 @@ namespace Chess.Game
         }
         public static List<Move> GenerateLegalMoves(Board b, PromotionAllowed promo = PromotionAllowed.All)
         {
-            List<Move> candidateMoves = new List<Move>();
+            System.Runtime.GCLatencyMode oldMode = System.Runtime.GCSettings.LatencyMode;
+            System.Runtime.GCSettings.LatencyMode = System.Runtime.GCLatencyMode.LowLatency;
+
+            List<Move> candidateMoves = new List<Move>(128);
             byte decodePiece;
             byte decodeLocation;
             int numberOfPieces = b.PieceList.Count();
@@ -113,14 +116,14 @@ namespace Chess.Game
                     }
                 }
             }
-
+            System.Runtime.GCSettings.LatencyMode = oldMode;
             return candidateMoves;
         }
         private static List<Move> GenerateCheckEvasion(Board b, PromotionAllowed promo = PromotionAllowed.All)
         {
             byte opponentColor = (byte)(2 - (byte)b.ColorToMove);
             byte kingSquare = b.KingSquares[(byte)b.ColorToMove - 1];
-            List<Move> candidateMoves = new List<Move>();
+            List<Move> candidateMoves = new List<Move>(64);
             Move m;
             byte decodeDefender, decodeDefenderPos;
             byte decodePiecePl, decodeLocationPl;
@@ -255,7 +258,7 @@ namespace Chess.Game
         }
         private static List<byte> FindBlockingSquares(byte attackingPieceLocation, byte defendingPieceLocation)
         {
-            List<byte> blockingSquares = new List<byte>();
+            List<byte> blockingSquares = new List<byte>(8);
             short distance, direction, squareTraverse;
 
             GetRayInCommon(attackingPieceLocation, defendingPieceLocation, out direction, out distance);
@@ -272,7 +275,7 @@ namespace Chess.Game
         }
         private static List<byte> FindBlockingSquares(byte attackingPieceLocation, byte defendingPieceLocation, short direction, short distance)
         {
-            List<byte> blockingSquares = new List<byte>();
+            List<byte> blockingSquares = new List<byte>(8);
             short squareTraverse;
             squareTraverse = attackingPieceLocation;
 
@@ -333,7 +336,8 @@ namespace Chess.Game
         }
         public static (List<ushort>[], List<ushort>[]) GenerateAttackMap(Board b, Colors sideToGenerateAttacksFor = 0)
         {
-
+            System.Runtime.GCLatencyMode oldMode = System.Runtime.GCSettings.LatencyMode;
+            System.Runtime.GCSettings.LatencyMode = System.Runtime.GCLatencyMode.LowLatency;
             Colors side;
             byte decodePiece;
             byte decodeLocation;
@@ -346,7 +350,7 @@ namespace Chess.Game
 
             byte kingSquare = b.KingSquares[2-(byte)side];
 
-            int numberOfPieces = b.PieceList.Count();
+            int numberOfPieces = b.PieceList.Count;
             for (int index = 0; index < numberOfPieces; index++)
             {
                 ushort piece = b.PieceList[index];
@@ -391,6 +395,7 @@ namespace Chess.Game
                     }
                 }
             }
+            System.Runtime.GCSettings.LatencyMode = oldMode;
             return (attackMap, attackMapWithoutPins);
         }
 

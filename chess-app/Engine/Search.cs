@@ -8,6 +8,9 @@ using static System.Math;
 namespace Chess.Engine
 {
     using Chess.Game;
+
+    // This implementation is HEAVILY leaveraged from: https://github.com/SebLague/Chess-AI
+
     public class Search
     {
         const short TargetDepth = 8;

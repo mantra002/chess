@@ -10,7 +10,7 @@ namespace Chess.Engine
     using Chess.Game;
     public class Search
     {
-        const short TargetDepth = 10;
+        const short TargetDepth = 8;
         const bool IterativeDeepening = true;
         Board board;
         int BestEval;
@@ -51,7 +51,7 @@ namespace Chess.Engine
                 {
                     DoSearch(i, 0, NegativeInfinity, PositiveInfinity);
 
-                    Console.WriteLine("Depth: " + i + " Nodes: " + numNodes + " TT Hits: " + ttHits +" Cutoffs: " + numCutoffCount + " Move: " + BestMoveSoFar.ToString() + " Score: " + BestEvalSoFar);
+                    Console.WriteLine("Depth: " + i + " Nodes: " + numNodes + " TT Hits: " + numTTHit + " Cutoffs: " + numCutoffCount + " Move: " + BestMoveSoFar.ToString() + " Score: " + BestEvalSoFar);
                 }
                 BestMove = BestMoveSoFar;
                 BestEval = BestEvalSoFar;
@@ -60,7 +60,7 @@ namespace Chess.Engine
             else
             {
                 DoSearch (TargetDepth, 0, NegativeInfinity, PositiveInfinity);
-                Console.WriteLine("Depth: " + TargetDepth + " Nodes: " + numNodes + " TT Hits: " + ttHits + " Cutoffs: " + numCutoffCount+ " Move: " + BestMoveSoFar.ToString() + " Score: " + BestEvalSoFar);
+                Console.WriteLine("Depth: " + TargetDepth + " Nodes: " + numNodes + " TT Hits: " + numTTHit + " Cutoffs: " + numCutoffCount+ " Move: " + BestMoveSoFar.ToString() + " Score: " + BestEvalSoFar);
                 BestMove = BestMoveSoFar;
                 BestEval = BestEvalSoFar;
             }
@@ -77,6 +77,19 @@ namespace Chess.Engine
                 {
                     return alpha;
                 }
+            }
+
+            int ttLookupScore = tt.LookupScore(board.ZobristHash, depth, plyFromRoot, alpha, beta);
+            if(ttLookupScore != int.MinValue)
+            {
+                numTTHit++;
+                if(plyFromRoot == 0)
+                {
+                    TranspositionTable.Position p = tt.LookupPosition(board.ZobristHash);
+                    BestMoveSoFar = p.MovePlayed;
+                    BestEvalSoFar = p.Score;
+                }
+                return ttLookupScore;
             }
 
             if (depth == 0)
@@ -100,6 +113,8 @@ namespace Chess.Engine
                 }
             }
 
+            TranspositionTable.NodeType nodeType = TranspositionTable.NodeType.UpperBound;
+
             Move bestMoveInThisPosition = null;
 
             for (int i = 0; i < moves.Count; i++)
@@ -113,6 +128,7 @@ namespace Chess.Engine
                 // (by choosing a different move earlier on). Skip remaining moves.
                 if (eval >= beta)
                 {
+                    tt.AddPosition(board.ZobristHash, beta, moves[i], (byte) depth, TranspositionTable.NodeType.LowerBound);
                     numCutoffCount++;
                     return beta;
                 }
@@ -121,7 +137,7 @@ namespace Chess.Engine
                 if (eval > alpha)
                 {
                     bestMoveInThisPosition = moves[i];
-
+                    nodeType = TranspositionTable.NodeType.Exact;
                     alpha = eval;
                     if (plyFromRoot == 0)
                     {
@@ -130,7 +146,7 @@ namespace Chess.Engine
                     }
                 }
             }
-
+            tt.AddPosition(board.ZobristHash, beta, BestMoveSoFar, (byte)depth, nodeType);
             return alpha;
 
         }

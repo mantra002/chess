@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,9 +18,6 @@ namespace Chess.Game
         }
         public static List<Move> GenerateLegalMoves(Board b, bool includeQuietMoves = true, promotionAllowed promo = promotionAllowed.All)
         {
-            System.Runtime.GCLatencyMode oldMode = System.Runtime.GCSettings.LatencyMode;
-            System.Runtime.GCSettings.LatencyMode = System.Runtime.GCLatencyMode.LowLatency;
-
             List<Move> candidateMoves = new List<Move>();
             byte decodePiece;
             byte decodeLocation;
@@ -116,7 +114,6 @@ namespace Chess.Game
                     }
                 }
             }
-            System.Runtime.GCSettings.LatencyMode = oldMode;
             return candidateMoves;
         }
         private static List<Move> GenerateCheckEvasion(Board b, promotionAllowed promo = promotionAllowed.All)
@@ -376,15 +373,7 @@ namespace Chess.Game
                     else if ((decodePiece & (byte)PieceNames.Knight) == (byte)PieceNames.Knight)
                     {
                         GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.AvailibleKnightMoves[decodeLocation], ref attackMap, ref attackMapWithoutPins);
-                    }
-                    else if ((decodePiece & (byte)PieceNames.King) == (byte)PieceNames.King)
-                    {
-                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.AvailibleKingMoves[decodeLocation], ref attackMap, ref attackMapWithoutPins, allowMoveIntoCheck: false, canBePinned: false);
-                    }
-                    else if ((decodePiece & (byte)PieceNames.Queen) == (byte)PieceNames.Queen)
-                    {
-                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FQueenMoves, decodeLocation, b, kingSquare), ref attackMap, ref attackMapWithoutPins);
-                    }
+                    }  
                     else if ((decodePiece & (byte)PieceNames.Bishop) == (byte)PieceNames.Bishop)
                     {
                         GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FBishopMoves, decodeLocation, b, kingSquare), ref attackMap, ref attackMapWithoutPins);
@@ -392,6 +381,14 @@ namespace Chess.Game
                     else if ((decodePiece & (byte)PieceNames.Rook) == (byte)PieceNames.Rook)
                     {
                         GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FRookMoves, decodeLocation, b, kingSquare), ref attackMap, ref attackMapWithoutPins);
+                    }
+                    else if ((decodePiece & (byte)PieceNames.Queen) == (byte)PieceNames.Queen)
+                    {
+                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FQueenMoves, decodeLocation, b, kingSquare), ref attackMap, ref attackMapWithoutPins);
+                    }
+                    else if ((decodePiece & (byte)PieceNames.King) == (byte)PieceNames.King)
+                    {
+                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.AvailibleKingMoves[decodeLocation], ref attackMap, ref attackMapWithoutPins, allowMoveIntoCheck: false, canBePinned: false);
                     }
                     else
                     {
@@ -446,6 +443,7 @@ namespace Chess.Game
             }
             return false;
         }
+
         private static void GenerateAttacks(Board b, Colors c, byte decodePiece, byte origin, short[] availibleMoves, ref List<ushort>[] attackMaps, ref List<ushort>[] attackMapWithoutPin, bool allowMoveIntoCheck = true, bool canBePinned = true)
         {
             byte destinationPiece;
@@ -478,6 +476,7 @@ namespace Chess.Game
                 }
             }
         }
+
         private static bool PinCheckByRay(Board b, byte origin, byte destination, Colors color)
         {
             byte checkPieceLocation;

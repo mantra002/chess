@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Chess.Game
 {
     using static Enums;
-    public class Board
+    public class Board : ICloneable
     {
 
         public byte[] GameBoard = new byte[64];
@@ -18,10 +18,7 @@ namespace Chess.Game
         public bool InCheck = false;
         public bool CheckMate = false;
         public List<ushort> PieceList = new List<ushort>(); //Formmatted as 0bLLLLLLLLPPPPPPCC L = Location; P = Piece; C = Color
-        public Stack<Move> GameHistory = new Stack<Move>();
-        private Stack<List<ushort>[][]> AttackedSquaresHistory = new Stack<List<ushort>[][]>();
-        private Stack<List<ushort>[][]> AttackedSquaresWithoutPinsHistory = new Stack<List<ushort>[][]>();
-        public Stack<byte> CastleMaskHistory = new Stack<byte>();
+        public Stack<GameState> GameHistory = new Stack<GameState>();
         public List<ushort>[][] AttackedSquares = new List<ushort>[2][];
         public List<ushort>[][] AttackedSquaresWithoutPins = new List<ushort>[2][];
         public byte[] KingSquares = new byte[2];
@@ -29,7 +26,23 @@ namespace Chess.Game
 
         public short MoveCounter = 0;
         public byte FiftyMoveCounter = 0; //In Ply
-       
+
+        public struct GameState
+        {
+            public List<ushort>[][] AttackedSquares;
+            public List<ushort>[][] AttackedSquaresWithoutPins;
+            public Move PlayedMove;
+            public byte CastleMask;
+
+            public GameState(List<ushort>[][] atksq, List<ushort>[][] aswp, Move m, byte cm)
+            {
+                this.AttackedSquares = atksq;
+                this.AttackedSquaresWithoutPins = aswp;
+                this.PlayedMove = m;
+                this.CastleMask = cm;
+            }
+        }
+
 
         public Board(string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
         {
@@ -115,16 +128,13 @@ namespace Chess.Game
         public void PlayMove(Move move)
         {
             if (CheckMate) return;
-            AttackedSquaresHistory.Push(AttackedSquares);
-            AttackedSquaresWithoutPinsHistory.Push(AttackedSquaresWithoutPins);
+            GameHistory.Push(new GameState(this.AttackedSquares, this.AttackedSquaresWithoutPins, move, this.CastleMask));
 
             ZobristHash ^= Game.ZobristHash.CastleKeys[CastleMask];
             if(this.EnPassantTarget != Squares.None) ZobristHash ^= Game.ZobristHash.EpKeys[(byte)this.EnPassantTarget];
 
             MoveCounter++;
-            GameHistory.Push(move);
-            CastleMaskHistory.Push(CastleMask);
-
+            
             if (move.CastleFlags == CastleFlags.None)
             {
                 if((byte)move.Piece == ((byte)PieceNames.King | (byte)Colors.White))
@@ -356,17 +366,16 @@ namespace Chess.Game
             {
                 ColorToMove = Colors.White;
             }
-
+            GameState gs = GameHistory.Pop();
             if (MoveCounter == 0)
             {
                 EnPassantTarget = EnPassantTargetTimeZero;
-                GameHistory.Pop();
+                
             }
-            else EnPassantTarget = GameHistory.Pop().AllowsEnPassantTarget;
-            AttackedSquares = AttackedSquaresHistory.Pop();
-            AttackedSquaresWithoutPins = AttackedSquaresWithoutPinsHistory.Pop();
-            
-            CastleMask = CastleMaskHistory.Pop();
+            else EnPassantTarget = gs.PlayedMove.AllowsEnPassantTarget;
+
+            CastleMask = gs.CastleMask;
+
             ZobristHash ^= Game.ZobristHash.CastleKeys[CastleMask];
             ZobristHash ^= Game.ZobristHash.BlackToPlay;
             if (this.EnPassantTarget != Squares.None) ZobristHash ^= Game.ZobristHash.EpKeys[(byte)this.EnPassantTarget];
@@ -537,8 +546,6 @@ namespace Chess.Game
             EnPassantTarget = Squares.None;
             MoveCounter = 0;
             GameHistory.Clear();
-            AttackedSquaresHistory.Clear();
-            CastleMaskHistory.Clear();
             InCheck = false;
             CheckMate = false;
             FiftyMoveCounter = 0; //Not functional
@@ -609,6 +616,12 @@ namespace Chess.Game
         public static byte DecodePieceFromPieceList(ushort plPiece)
         {
             return (byte) (plPiece & 0b000000011111111);
+        }
+
+        public object Clone()
+        {
+            Board temp = new Board(this.ToFEN());
+            return temp;
         }
     }
 }

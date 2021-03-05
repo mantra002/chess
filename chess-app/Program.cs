@@ -17,10 +17,10 @@ namespace Chess
 
             Board b = new Board("2kr3r/pppq1p2/2np1n1p/2b3p1/2BpP1b1/2P2NB1/PP1N1PPP/R2Q1RK1 w - - 0 12");
             Search s = new Search(b);
-            s.StartSearch(7);
+            s.StartSearch(6);
             //GameManager gm = new GameManager();
             //gm.RunPerft(5);
-            Console.ReadKey();
+            //Console.ReadKey();
             //string textMove;
             //for(int i = 0; i < 80; i++)
             //{

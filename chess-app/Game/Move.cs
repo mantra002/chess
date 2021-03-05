@@ -17,6 +17,13 @@ namespace Chess.Game
         public bool CaptureEnPassant;
         public byte PromoteIntoPiece;
         public int MoveScore = 999999999;
+        public int MoveHash
+        {
+            get
+            {
+                return (this.Piece << 8 ^ this.PieceCaptured) ^ this.Origin ^ this.Destination ^ ((byte)this.AllowsEnPassantTarget << 12) ^ ((byte)this.CastleFlags << 12);
+            }
+        }
 
         public CastleFlags CastleFlags;
         public Colors SideToMove;

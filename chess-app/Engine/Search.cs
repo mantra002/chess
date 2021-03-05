@@ -4,6 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static System.Math;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.IO;
+using System.Runtime.Serialization;
 
 namespace Chess.Engine
 {
@@ -37,6 +40,7 @@ namespace Chess.Engine
         int numDeltaCutoffs;
         int numCutoffCount;
         int numTTHit;
+        int numSeeCutoff;
         int qDepth;
 
 
@@ -60,23 +64,36 @@ namespace Chess.Engine
                 for(int i = 1; i <= TargetDepth; i++)
                 {
                     DoSearch(i, 0, NegativeInfinity, PositiveInfinity);
-
-                    Console.WriteLine("Depth: " + i + "/" + qDepth + " Nodes: " + numNodes + " TT Hits: " + numTTHit + " Cutoffs: " + numCutoffCount + " D Cutoffs: " + numDeltaCutoffs+ " Move: " + BestMoveSoFar.ToString() + " Score: " + BestEvalSoFar);
+                    PrintSearchStats(i);
+                    BestMove = BestMoveSoFar;
+                    BestEval = BestEvalSoFar;
                 }
-                BestMove = BestMoveSoFar;
-                BestEval = BestEvalSoFar;
-
             }
             else
             {
                 DoSearch (TargetDepth, 0, NegativeInfinity, PositiveInfinity);
-                Console.WriteLine("Depth: " + TargetDepth + " Nodes: " + numNodes + " TT Hits: " + numTTHit + " Cutoffs: " + numCutoffCount+ " Move: " + BestMoveSoFar.ToString() + " Score: " + BestEvalSoFar);
                 BestMove = BestMoveSoFar;
                 BestEval = BestEvalSoFar;
+                PrintSearchStats(TargetDepth);
             }
         }
-        private int DoSearch(int depth, int plyFromRoot, int alpha, int beta)
+        public void PrintSearchStats(int depth)
         {
+            Console.WriteLine("".PadLeft(8, '='));
+            Console.WriteLine("Depth: " + depth + "/" + qDepth);
+            Console.WriteLine("Nodes: " + numNodes);
+            Console.WriteLine("TT Hits: " + numTTHit);
+            Console.WriteLine("Cutoffs: ");
+            Console.WriteLine("  Beta: "+ numCutoffCount);
+            Console.WriteLine("  Delta: " + numDeltaCutoffs);
+            Console.WriteLine("  SEE: " + numSeeCutoff);
+            Console.WriteLine("Move: " + BestMoveSoFar.ToString());
+            Console.WriteLine("Score: " + BestEvalSoFar);
+            Console.WriteLine("".PadLeft(8, '='));
+        }
+        private int DoSearch(int depth, int plyFromRoot, int alpha, int beta, Board b = null)
+        {
+            if (b == null) b = this.board;
             if (plyFromRoot > 0)
             {
                 alpha = Max(alpha, -MateScore + plyFromRoot);
@@ -190,28 +207,35 @@ namespace Chess.Engine
             }
 
             List<Move> moves = MoveGeneration.GenerateLegalMoves(board, includeQuietMoves: false);
-            if (UseMoveOrdering) MoveOrdering.OrderMoves(board, tt, moves);
+            if (UseMoveOrdering) MoveOrdering.OrderMoves(board, tt, moves, UseSEE: true);
             //Order moves
             for (int i = 0; i < moves.Count; i++)
             {
-                board.PlayMove(moves[i]);
-                eval = -QuiescenceSearch(-beta, -alpha, plyFromRoot+1);
-                board.UndoMove(moves[i]);
-                this.numNodes++;
+                if (moves[i].MoveScore < Evaluation.SeeCutoff)
+                {
+                    board.PlayMove(moves[i]);
+                    eval = -QuiescenceSearch(-beta, -alpha, plyFromRoot + 1);
+                    board.UndoMove(moves[i]);
+                    this.numNodes++;
 
-                if (eval >= beta)
-                {
-                    this.numCutoffCount++;
-                    return beta;
+                    if (eval >= beta)
+                    {
+                        this.numCutoffCount++;
+                        return beta;
+                    }
+                    if (eval > alpha)
+                    {
+                        alpha = eval;
+                    }
                 }
-                if (eval > alpha)
+                else
                 {
-                    alpha = eval;
+                    numSeeCutoff++;
+                    return alpha;
                 }
             }
 
             return alpha;
-
         }
     }
 }

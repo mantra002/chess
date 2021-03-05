@@ -12,20 +12,26 @@ namespace Chess.Engine
     public class TranspositionTable
     {
         Position[] tt;
-        const int TABLE_SIZE = 64000;
+        public int TableSizeInMb;
+        readonly ulong TableSizeInPositions;
 
-        public TranspositionTable()
+        public TranspositionTable(int sizeInMb = 32)
         {
-            tt = new Position[TABLE_SIZE];
+            TableSizeInMb = sizeInMb;
+            TableSizeInPositions = (ulong) sizeInMb* 1000000 / (ulong)(Position.GetSize());
+            tt = new Position[TableSizeInPositions];
+#if DEBUG
+            Console.WriteLine("Intializing Transposition Table with " + TableSizeInMb + "mb of space");
+#endif 
         }
 
         public void ClearTable()
         {
-            tt = new Position[TABLE_SIZE];
+            tt = new Position[TableSizeInPositions];
         }
         private int GetTTIndex(ulong hashKey)
         {
-            return (int)(hashKey % TABLE_SIZE);
+            return (int)(hashKey % TableSizeInPositions);
         }
         public int LookupScore(ulong hashKey, int depth, int ply, int alpha, int beta)
         {

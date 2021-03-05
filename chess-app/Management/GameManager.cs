@@ -46,7 +46,7 @@ namespace Chess.Management
         {
             for (int i = 0; i < movesToUndo; i++)
             {
-                Board.UndoMove(Board.GameHistory.Peek());
+                Board.UndoMove(Board.GameHistory.Peek().PlayedMove);
             }
         }
         public void RunPerft(int depth)

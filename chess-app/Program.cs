@@ -14,12 +14,13 @@ namespace Chess
         static void Main(string[] args)
 
         {
-            Board b = new Board("5k2/8/8/2r5/8/8/8/3KQ3 w - - 0 1");
+
+            Board b = new Board("2kr3r/pppq1p2/2np1n1p/2b3p1/2BpP1b1/2P2NB1/PP1N1PPP/R2Q1RK1 w - - 0 12");
             Search s = new Search(b);
-            s.StartSearch();
+            s.StartSearch(7);
             //GameManager gm = new GameManager();
             //gm.RunPerft(5);
-            //Console.ReadKey();
+            Console.ReadKey();
             //string textMove;
             //for(int i = 0; i < 80; i++)
             //{

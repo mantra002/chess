@@ -372,3 +372,4 @@ reference/PseudoLegalMoveGenerator.cs
 reference/TranspositionTable.cs
 reference/Zobrist.cs
 /chess-app/ChessLib
+/perf

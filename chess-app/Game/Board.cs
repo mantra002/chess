@@ -27,7 +27,7 @@ namespace Chess.Game
         public byte[] KingSquares = new byte[2];
         public ulong ZobristHash;
 
-        public short Ply = 0;
+        public short MoveCounter = 0;
         public byte FiftyMoveCounter = 0; //In Ply
        
 
@@ -121,7 +121,7 @@ namespace Chess.Game
             ZobristHash ^= Game.ZobristHash.CastleKeys[CastleMask];
             if(this.EnPassantTarget != Squares.None) ZobristHash ^= Game.ZobristHash.EpKeys[(byte)this.EnPassantTarget];
 
-            Ply++;
+            MoveCounter++;
             GameHistory.Push(move);
             CastleMaskHistory.Push(CastleMask);
 
@@ -264,7 +264,7 @@ namespace Chess.Game
 
         public void UndoMove(Move move)
         {
-            Ply--;
+            MoveCounter--;
             if (CheckMate) CheckMate = false;
             if (InCheck) InCheck = false;
             ZobristHash ^= Game.ZobristHash.CastleKeys[CastleMask];
@@ -357,7 +357,7 @@ namespace Chess.Game
                 ColorToMove = Colors.White;
             }
 
-            if (Ply == 0)
+            if (MoveCounter == 0)
             {
                 EnPassantTarget = EnPassantTargetTimeZero;
                 GameHistory.Pop();
@@ -426,12 +426,16 @@ namespace Chess.Game
             }
 
             //50 Move Timer
-            if (splitFen.Length > 5 && splitFen[4].Trim() != "")
+            if (splitFen.Length >= 5 && splitFen[4].Trim() != "")
             {
                 this.FiftyMoveCounter = byte.Parse(splitFen[4].Trim());
             }
 
-
+            //Move Counter
+            if (splitFen.Length >= 6 && splitFen[5].Trim() != "")
+            {
+                this.MoveCounter = (short)(short.Parse(splitFen[5].Trim())*2);
+            }
 
             (this.AttackedSquares[0], this.AttackedSquaresWithoutPins[0]) = MoveGeneration.GenerateAttackMap(this, Colors.Black);
             (this.AttackedSquares[1], this.AttackedSquaresWithoutPins[1]) = MoveGeneration.GenerateAttackMap(this, Colors.White);
@@ -443,6 +447,7 @@ namespace Chess.Game
             }
             else
             {
+                MoveCounter++;
                 ColorToMove = Colors.Black;
                 ZobristHash ^= Game.ZobristHash.BlackToPlay;
             }
@@ -450,6 +455,75 @@ namespace Chess.Game
             if (this.EnPassantTarget != Enums.Squares.None) ZobristHash ^= Game.ZobristHash.EpKeys[(byte)this.EnPassantTarget];
         }
 
+        public string ToFEN()
+        {
+            byte piece = 0;
+            byte blankSquareCount = 0;
+            StringBuilder fen = new StringBuilder();
+
+            //Setup pieces
+            for(int rank = 0; rank < 8; rank++)
+            {
+                blankSquareCount = 0;
+                for (int file = 0; file < 8; file++)
+                {
+                    piece = GameBoard[rank * 8 + file];
+                    if (piece != 0)
+                    {
+                        if(blankSquareCount != 0) fen.Append(blankSquareCount);
+                        fen.Append(Pieces.DecodePieceToChar(piece));
+                        blankSquareCount = 0;
+                    }
+                    else blankSquareCount++;
+                }
+                if(blankSquareCount != 0)
+                {
+                    fen.Append(blankSquareCount);
+                }
+                if(rank != 7) fen.Append("/");
+            }
+
+            //Determine side to move
+            if (ColorToMove == Colors.White)
+            {
+                fen.Append(" w ");
+            }
+            else
+            {
+                fen.Append(" b ");
+            }
+
+            //Castling rights
+            if (CastleMask != 0)
+            {
+                if ((CastleMask & 0b1000) != 0) fen.Append("K");
+                if ((CastleMask & 0b0100) != 0) fen.Append("Q");
+                if ((CastleMask & 0b0010) != 0) fen.Append("k");
+                if ((CastleMask & 0b0001) != 0) fen.Append("q");
+            }
+            else fen.Append("-");
+
+            fen.Append(" ");
+
+            //Enpassant
+
+            if (EnPassantTarget != Squares.None)
+            {
+                fen.Append(EnPassantTarget.ToString());
+            }
+            else fen.Append("-");
+
+            fen.Append(" ");
+
+            //50 Move Timer
+            fen.Append(FiftyMoveCounter);
+            fen.Append(" ");
+
+            //Move Counter
+            fen.Append(MoveCounter / 2);
+
+            return fen.ToString();
+        }
         public void NewBoard(string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
         {
             LoadFEN(fen);
@@ -461,7 +535,7 @@ namespace Chess.Game
             PieceList = new List<ushort>();
             CastleMask = 0b0000;
             EnPassantTarget = Squares.None;
-            Ply = 0;
+            MoveCounter = 0;
             GameHistory.Clear();
             AttackedSquaresHistory.Clear();
             CastleMaskHistory.Clear();

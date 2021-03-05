@@ -13,15 +13,15 @@ namespace Chess.Engine
 
     public class Search
     {
-        const short TargetDepth = 5;
+        public short TargetDepth = 6;
+        const short MaximumQuiescenceSearchDepth = 10;
         const bool IterativeDeepeningEnable = true;
         const bool QuiescenceSearchEnable = true;
+        const bool UseMoveOrdering = true;
         Board board;
         int BestEval;
         Move BestMove;
-        Move bestIterativeMove;
-        int bestIterativeScore;
-        long ttHits = 0;
+
         TranspositionTable tt;
 
         const int MateScore = 100000;
@@ -34,6 +34,7 @@ namespace Chess.Engine
         int BestEvalSoFar;
 
         int numNodes;
+        int numDeltaCutoffs;
         int numCutoffCount;
         int numTTHit;
         int qDepth;
@@ -45,13 +46,14 @@ namespace Chess.Engine
             tt = new TranspositionTable();
         }
 
-        public void StartSearch()
+        public void StartSearch(short depth)
         {
+            this.TargetDepth = depth;
             PrincipalVariation = new List<Move>();
             numTTHit = numCutoffCount = numNodes = 0;
   
-            BestEval = bestIterativeScore = qDepth = 0;
-            BestMove = bestIterativeMove = null;
+            BestEval = BestEvalSoFar = qDepth = 0;
+            BestMove = BestMoveSoFar = null;
 
             if(IterativeDeepeningEnable)
             {
@@ -59,7 +61,7 @@ namespace Chess.Engine
                 {
                     DoSearch(i, 0, NegativeInfinity, PositiveInfinity);
 
-                    Console.WriteLine("Depth: " + i + "/" + qDepth + " Nodes: " + numNodes + " TT Hits: " + numTTHit + " Cutoffs: " + numCutoffCount + " Move: " + BestMoveSoFar.ToString() + " Score: " + BestEvalSoFar);
+                    Console.WriteLine("Depth: " + i + "/" + qDepth + " Nodes: " + numNodes + " TT Hits: " + numTTHit + " Cutoffs: " + numCutoffCount + " D Cutoffs: " + numDeltaCutoffs+ " Move: " + BestMoveSoFar.ToString() + " Score: " + BestEvalSoFar);
                 }
                 BestMove = BestMoveSoFar;
                 BestEval = BestEvalSoFar;
@@ -105,6 +107,7 @@ namespace Chess.Engine
             }
 
             List<Move> moves = MoveGeneration.GenerateLegalMoves(board);
+            if(UseMoveOrdering) MoveOrdering.OrderMoves(board, tt, moves);
             // Detect checkmate and stalemate when no legal moves are available
             if (moves.Count == 0)
             {
@@ -171,10 +174,15 @@ namespace Chess.Engine
         {
             qDepth = Max(plyFromRoot, qDepth);
             int eval = Evaluation.Evaluate(board);
-
+            //return eval;
             if (eval >= beta)
             {
                 return beta;
+            }
+            if(eval < alpha - Evaluation.QueenValue)
+            {
+                numDeltaCutoffs++;
+                return alpha;
             }
             if (eval > alpha)
             {
@@ -182,6 +190,7 @@ namespace Chess.Engine
             }
 
             List<Move> moves = MoveGeneration.GenerateLegalMoves(board, includeQuietMoves: false);
+            if (UseMoveOrdering) MoveOrdering.OrderMoves(board, tt, moves);
             //Order moves
             for (int i = 0; i < moves.Count; i++)
             {

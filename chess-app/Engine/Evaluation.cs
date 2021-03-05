@@ -13,12 +13,15 @@ namespace Chess.Engine
 
     {
         public const int MateValue = 50000;
-        const int PawnValue = 100;
-        const int BishopValue = 325;
-        const int KnightValue = 325;
-        const int RookValue = 500;
-        const int QueenValue = 975;
-        const int KingValue = 20000;
+        public const int PawnValue = 100;
+        public const int BishopValue = 325;
+        public const int KnightValue = 325;
+        public const int RookValue = 500;
+        public const int QueenValue = 975;
+        public const int KingValue = 20000;
+
+        public const int CaptureBonusMultiplier = 5;
+        public const int DefendedByCheapPiecePenalty = 250;
 
         const int BishopPairValue = 50;
         const int KnightPawnBonus = 6; // per pawn > 5 pawns
@@ -131,6 +134,33 @@ namespace Chess.Engine
             else return score;
         }
 
+        public static int GetPieceValue(byte piece)
+        {
+            if ((piece & (byte)PieceNames.Pawn) != 0)
+            {
+                return Evaluation.PawnValue;
+            }
+            else if ((piece & (byte)PieceNames.Knight) != 0)
+            {
+                return Evaluation.KnightValue;
+            }
+            else if ((piece & (byte)PieceNames.Bishop) != 0)
+            {
+                return Evaluation.BishopValue;
+            }
+            else if ((piece & (byte)PieceNames.Rook) != 0)
+            {
+                return Evaluation.RookValue;
+            }
+            else if ((piece & (byte)PieceNames.Queen) != 0)
+            {
+                return Evaluation.QueenValue;
+            }
+            else
+            {
+                return Evaluation.KingValue;
+            }
+        }
 
     }
 }

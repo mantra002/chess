@@ -49,10 +49,7 @@ namespace Chess.Engine
                     }
                 }
             }
-            else
-            {
-                //Console.WriteLine("No Match");
-            }
+
             return int.MinValue;
         }
         public Position LookupPosition(ulong hashKey)

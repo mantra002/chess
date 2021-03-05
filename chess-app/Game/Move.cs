@@ -16,6 +16,7 @@ namespace Chess.Game
         public byte Destination;
         public bool CaptureEnPassant;
         public byte PromoteIntoPiece;
+        public int MoveScore = 999999999;
 
         public CastleFlags CastleFlags;
         public Colors SideToMove;
@@ -44,14 +45,16 @@ namespace Chess.Game
         }
 
         // Default comparer for Part type.
-        public int CompareTo(Move comparePart)
+        public int CompareTo(Move compareMove)
         {
             // A null value means that this object is greater.
-            if (comparePart == null)
+            if (compareMove == null)
                 return 1;
 
-            else
-                return this.ToString().CompareTo(comparePart.ToString());
+            else if(compareMove.MoveScore == 999999999) //If no score set 
+                return this.ToString().CompareTo(compareMove.ToString());
+
+            else return this.MoveScore.CompareTo(compareMove.MoveScore);
         }
         public Move(string move, Board b)
         {

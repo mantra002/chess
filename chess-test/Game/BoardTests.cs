@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+
 namespace Chess.Test
 {
     [TestClass()]
@@ -78,6 +79,18 @@ namespace Chess.Test
             gm.Perft(3);
 
             Assert.AreEqual(startingZhash, gm.Board.ZobristHash);
+        }
+
+        [TestMethod()]
+        [DataRow("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8")]
+        [DataRow("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1")]
+        [DataRow("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")]
+        [DataRow("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 7")]
+        [DataRow("rnbqkbnr/pppp2pp/8/4Pp2/3p4/8/PPP2PPP/RNBQKBNR w KQkq f6 0 4")]
+        public void ToFENTest(string fen)
+        {
+            Board b = new Board(fen);
+            Assert.AreEqual(fen, b.ToFEN());
         }
     }
 }

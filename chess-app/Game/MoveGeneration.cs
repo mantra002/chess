@@ -20,7 +20,7 @@ namespace Chess.Game
             System.Runtime.GCLatencyMode oldMode = System.Runtime.GCSettings.LatencyMode;
             System.Runtime.GCSettings.LatencyMode = System.Runtime.GCLatencyMode.LowLatency;
 
-            List<Move> candidateMoves = new List<Move>(128);
+            List<Move> candidateMoves = new List<Move>();
             byte decodePiece;
             byte decodeLocation;
             int numberOfPieces = b.PieceList.Count();
@@ -182,7 +182,11 @@ namespace Chess.Game
                                 }
                                 if (pawnMoves.Contains(bSquare))
                                 {
-                                    candidateMoves.Add(GenerateMoves(b, decodeLocationPl, pawnMoves, index, false, isPawn: true, promo: promo).Find(x => x.Destination == bSquare));
+                                    List<Move> mPawn = GenerateMoves(b, decodeLocationPl, pawnMoves, index, false, isPawn: true, promo: promo).FindAll(x => x.Destination == bSquare);
+                                    foreach (Move pm in mPawn)
+                                    {
+                                        candidateMoves.Add(pm);
+                                    }
                                 }
                             }
                             else
@@ -194,8 +198,11 @@ namespace Chess.Game
                                 }
                                 if (pawnMoves.Contains(bSquare))
                                 {
-                                    Move mPawn = GenerateMoves(b, decodeLocationPl, pawnMoves, index, false, isPawn: true, promo: promo).Find(x => x.Destination == bSquare);
-                                    if (mPawn.Destination == bSquare) candidateMoves.Add(mPawn);
+                                    List<Move> mPawn = GenerateMoves(b, decodeLocationPl, pawnMoves, index, false, isPawn: true, promo: promo).FindAll(x => x.Destination == bSquare);
+                                    foreach (Move pm in mPawn)
+                                    {
+                                        candidateMoves.Add(pm);
+                                    }
                                 }
                             }
                         }
@@ -336,8 +343,6 @@ namespace Chess.Game
         }
         public static (List<ushort>[], List<ushort>[]) GenerateAttackMap(Board b, Colors sideToGenerateAttacksFor = 0)
         {
-            System.Runtime.GCLatencyMode oldMode = System.Runtime.GCSettings.LatencyMode;
-            System.Runtime.GCSettings.LatencyMode = System.Runtime.GCLatencyMode.LowLatency;
             Colors side;
             byte decodePiece;
             byte decodeLocation;
@@ -349,7 +354,6 @@ namespace Chess.Game
             else side = sideToGenerateAttacksFor;
 
             byte kingSquare = b.KingSquares[2-(byte)side];
-
             int numberOfPieces = b.PieceList.Count;
             for (int index = 0; index < numberOfPieces; index++)
             {
@@ -395,7 +399,6 @@ namespace Chess.Game
                     }
                 }
             }
-            System.Runtime.GCSettings.LatencyMode = oldMode;
             return (attackMap, attackMapWithoutPins);
         }
 

@@ -32,12 +32,37 @@ namespace Chess.Game
             {
                 np.Color = Enums.Colors.Black;
             }
-            foreach (Enums.PieceNames b in Enum.GetValues(typeof(Enums.PieceNames)))
-            {
-                if ((p & (byte) b) == (byte) b) np.Name = b;
-            }
+            np.Name = DecodePieceName(p);
 
             return np;
+        }
+
+        static public Enums.PieceNames DecodePieceName(byte p)
+        {
+            if ((p & (byte)Enums.PieceNames.Pawn) != 0)
+            { 
+                return Enums.PieceNames.Pawn;
+            }
+            else if ((p & (byte)Enums.PieceNames.Knight) != 0)
+            {
+                return Enums.PieceNames.Knight;
+            }
+            else if ((p & (byte)Enums.PieceNames.Bishop) != 0)
+            {
+                return Enums.PieceNames.Bishop;
+            }
+            else if ((p & (byte)Enums.PieceNames.Rook) != 0)
+            {
+                return Enums.PieceNames.Rook;
+            }
+            else if ((p & (byte)Enums.PieceNames.Queen) != 0)
+            {
+                return Enums.PieceNames.Queen;
+            }
+            else
+            {
+                return Enums.PieceNames.King;
+            }
         }
 
         static public char DecodePieceToChar(Piece p)

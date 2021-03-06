@@ -62,7 +62,7 @@ namespace Chess.Engine
                 {
                     if ((decodePiece & (byte)Colors.White) == (byte)Colors.White)
                     {
-                        score += KnightValue + PieceSquareTable.GetTableValue(PieceSquareTable.Knight, decodeLocation, Colors.White); 
+                        score += KnightValue + PieceSquareTable.GetTableValue(PieceSquareTable.Knight, decodeLocation, Colors.White);
                         knightCountWhite++;
                     }
                     else
@@ -126,13 +126,14 @@ namespace Chess.Engine
             }
             if (bishopCountBlack > 1) score -= BishopPairValue;
             if (bishopCountWhite > 1) score += BishopPairValue;
-            score += RookPawnPenalty * (pawnCountWhite-5) * rookCountWhite;
+            score += RookPawnPenalty * (pawnCountWhite - 5) * rookCountWhite;
             score -= RookPawnPenalty * (pawnCountBlack - 5) * rookCountBlack;
             score += KnightPawnBonus * (pawnCountWhite - 5) * knightCountWhite;
             score -= KnightPawnBonus * (pawnCountBlack - 5) * knightCountBlack;
 
             if (b.ColorToMove == Colors.Black) return -score;
-            else return score;
+            else
+                return score;
         }
 
         public static int GetPieceValue(byte piece)

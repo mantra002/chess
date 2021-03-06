@@ -52,7 +52,7 @@ namespace Chess.Game
         public void AddPiece(byte piece, byte location)
         {
             GameBoard[location] = piece;
-            if(piece != 0) PieceList.Add(EncodePieceForPieceList(piece, location));
+            if (piece != 0) PieceList.Add(EncodePieceForPieceList(piece, location));
             ZobristPiece(piece, location);
         }
         public void RemovePiece(byte piece, byte location, int index = -1)
@@ -60,7 +60,7 @@ namespace Chess.Game
             //This method doesn't work because the piece list is being changed with every remove or add.
             //if(index != -1) PieceList.RemoveAt(index);
             //else 
-            if(piece != 0) PieceList.Remove(EncodePieceForPieceList(piece, location));
+            if (piece != 0) PieceList.Remove(EncodePieceForPieceList(piece, location));
             GameBoard[location] = 0;
             ZobristPiece(piece, location);
         }
@@ -131,23 +131,23 @@ namespace Chess.Game
             GameHistory.Push(new GameState(this.AttackedSquares, this.AttackedSquaresWithoutPins, move, this.CastleMask));
 
             ZobristHash ^= Game.ZobristHash.CastleKeys[CastleMask];
-            if(this.EnPassantTarget != Squares.None) ZobristHash ^= Game.ZobristHash.EpKeys[(byte)this.EnPassantTarget];
+            if (this.EnPassantTarget != Squares.None) ZobristHash ^= Game.ZobristHash.EpKeys[(byte)this.EnPassantTarget];
 
             MoveCounter++;
-            
+
             if (move.CastleFlags == CastleFlags.None)
             {
-                if((byte)move.Piece == ((byte)PieceNames.King | (byte)Colors.White))
+                if ((byte)move.Piece == ((byte)PieceNames.King | (byte)Colors.White))
                 {
                     CastleMask = (byte)(CastleMask & 0b0011); //White Short - White Long - Black Short - Black Long
                 }
                 else if ((byte)move.Piece == ((byte)PieceNames.Rook | (byte)Colors.White))
                 {
-                    if(move.Origin == (byte) Squares.a1)
+                    if (move.Origin == (byte)Squares.a1)
                     {
                         CastleMask = (byte)(CastleMask & 0b1011);
                     }
-                    else if(move.Origin == (byte)Squares.h1)
+                    else if (move.Origin == (byte)Squares.h1)
                     {
                         CastleMask = (byte)(CastleMask & 0b0111);
                     }
@@ -213,10 +213,10 @@ namespace Chess.Game
 #endif
                     AddPiece(move.Piece, move.Destination); //Add the moved piece back in.
                 }
-               
-              
+
+
             }
-            else if(move.SideToMove==Colors.White)
+            else if (move.SideToMove == Colors.White)
             {
                 RemovePiece((byte)PieceNames.King | (byte)Colors.White, (byte)Squares.e1);
 
@@ -225,7 +225,7 @@ namespace Chess.Game
                 if (move.CastleFlags == CastleFlags.WhiteShortCastle)
                 {
                     RemovePiece((byte)PieceNames.Rook | (byte)Colors.White, (byte)Squares.h1);
-                    AddPiece(Pieces.EncodePiece(PieceNames.King, Colors.White), (byte) Squares.g1);
+                    AddPiece(Pieces.EncodePiece(PieceNames.King, Colors.White), (byte)Squares.g1);
                     AddPiece(Pieces.EncodePiece(PieceNames.Rook, Colors.White), (byte)Squares.f1);
                 }
                 else if (move.CastleFlags == CastleFlags.WhiteLongCastle)
@@ -235,12 +235,12 @@ namespace Chess.Game
                     AddPiece(Pieces.EncodePiece(PieceNames.Rook, Colors.White), (byte)Squares.d1);
                 }
             }
-            else 
+            else
             {
 
                 CastleMask = (byte)(CastleMask & 0b1100);
                 RemovePiece((byte)PieceNames.King | (byte)Colors.Black, (byte)Squares.e8);
-                
+
                 if (move.CastleFlags == CastleFlags.BlackShortCastle)
                 {
                     RemovePiece((byte)PieceNames.Rook | (byte)Colors.Black, (byte)Squares.h8);
@@ -284,7 +284,7 @@ namespace Chess.Game
                 if (move.PromoteIntoPiece != 0) //If promotion
                 {
 #if DEBUG
-                    if(GameBoard[move.Destination] != move.PromoteIntoPiece)
+                    if (GameBoard[move.Destination] != move.PromoteIntoPiece)
                     {
                         throw new Exception("Removing non existant promotion piece!");
                     }
@@ -304,7 +304,7 @@ namespace Chess.Game
                     RemovePiece(move.Piece, move.Destination); //Remove the moved piece
                 }
 
-                
+
                 if (move.PieceCaptured != 0) //If there is a capture
                 {
                     if (!move.CaptureEnPassant) AddPiece(move.PieceCaptured, move.Destination); //Add the captured piece
@@ -370,7 +370,7 @@ namespace Chess.Game
             if (MoveCounter == 0)
             {
                 EnPassantTarget = EnPassantTargetTimeZero;
-                
+
             }
             else EnPassantTarget = gs.PlayedMove.AllowsEnPassantTarget;
 
@@ -394,7 +394,7 @@ namespace Chess.Game
                 {
                     if (Char.IsDigit(c))
                     {
-                        boardIndex += (byte) (c - '0');
+                        boardIndex += (byte)(c - '0');
                     }
                     else
                     {
@@ -403,9 +403,9 @@ namespace Chess.Game
                 }
             }
             //Determine side to move
-            
+
             //Castling rights
-            if(splitFen[2].Trim() != "-")
+            if (splitFen[2].Trim() != "-")
             {
                 foreach (char c in splitFen[2].Trim())
                 {
@@ -443,7 +443,7 @@ namespace Chess.Game
             //Move Counter
             if (splitFen.Length >= 6 && splitFen[5].Trim() != "")
             {
-                this.MoveCounter = (short)(short.Parse(splitFen[5].Trim())*2);
+                this.MoveCounter = (short)(short.Parse(splitFen[5].Trim()) * 2);
             }
 
             (this.AttackedSquares[0], this.AttackedSquaresWithoutPins[0]) = MoveGeneration.GenerateAttackMap(this, Colors.Black);
@@ -471,7 +471,7 @@ namespace Chess.Game
             StringBuilder fen = new StringBuilder();
 
             //Setup pieces
-            for(int rank = 0; rank < 8; rank++)
+            for (int rank = 0; rank < 8; rank++)
             {
                 blankSquareCount = 0;
                 for (int file = 0; file < 8; file++)
@@ -479,17 +479,17 @@ namespace Chess.Game
                     piece = GameBoard[rank * 8 + file];
                     if (piece != 0)
                     {
-                        if(blankSquareCount != 0) fen.Append(blankSquareCount);
+                        if (blankSquareCount != 0) fen.Append(blankSquareCount);
                         fen.Append(Pieces.DecodePieceToChar(piece));
                         blankSquareCount = 0;
                     }
                     else blankSquareCount++;
                 }
-                if(blankSquareCount != 0)
+                if (blankSquareCount != 0)
                 {
                     fen.Append(blankSquareCount);
                 }
-                if(rank != 7) fen.Append("/");
+                if (rank != 7) fen.Append("/");
             }
 
             //Determine side to move
@@ -555,7 +555,7 @@ namespace Chess.Game
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
-            for(int i = 0; i < 8; i++)
+            for (int i = 0; i < 8; i++)
             {
                 for (int j = 0; j < 8; j++)
                 {
@@ -566,7 +566,7 @@ namespace Chess.Game
                     else sb.Append(' ');
 
                 }
-                if(i != 7) sb.AppendLine();
+                if (i != 7) sb.AppendLine();
             }
             //
             return sb.ToString();
@@ -582,13 +582,13 @@ namespace Chess.Game
             offset = index % 8;
 
             file = (char)(97 + offset);
-          
+
             return String.Concat(file, rank);
         }
 
         public static byte GetRank(byte index)
         {
-            return (byte)(8-(index / 8));
+            return (byte)(8 - (index / 8));
         }
 
         public static byte GetFile(byte index)
@@ -598,13 +598,6 @@ namespace Chess.Game
 
         public static ushort EncodePieceForPieceList(byte piece, byte location)
         {
-            /*
-            Console.WriteLine("Piece = " + piece.ToString());
-            Console.WriteLine("Location = " + location.ToString());
-   
-            Console.WriteLine("Location Enc = " + ((ushort)location << 7).ToString());
-            Console.WriteLine("Piece Enc = " + ((ushort)(((ushort)location << 7) | piece)).ToString());
-            */
             return (ushort)(((ushort)location << 8) | piece);
         }
 
@@ -615,7 +608,7 @@ namespace Chess.Game
 
         public static byte DecodePieceFromPieceList(ushort plPiece)
         {
-            return (byte) (plPiece & 0b000000011111111);
+            return (byte)(plPiece & 0b000000011111111);
         }
 
         public object Clone()

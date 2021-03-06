@@ -26,7 +26,7 @@ namespace Chess.Engine
 
                 if (m.PieceCaptured != 0)
                 {
-                    if(UseSEE)
+                    if (UseSEE)
                     {
                         score += StaticExchangeEvaluation(b, m, thisPieceValue);
                     }
@@ -36,7 +36,7 @@ namespace Chess.Engine
                         score += Evaluation.GetPieceValue(m.PieceCaptured) * Evaluation.CaptureBonusMultiplier;
                     }
                 }
-                if(m.PromoteIntoPiece != 0)
+                if (m.PromoteIntoPiece != 0)
                 {
                     score += Evaluation.GetPieceValue(m.PromoteIntoPiece);
                 }
@@ -65,7 +65,7 @@ namespace Chess.Engine
             if (b.AttackedSquares[opponentColor][m.Destination] != null)
             {
 
-                for(int i = 0; i < b.AttackedSquares[opponentColor][m.Destination].Count; i++)
+                for (int i = 0; i < b.AttackedSquares[opponentColor][m.Destination].Count; i++)
                 {
                     currentDefenderScore = Evaluation.GetPieceValue((byte)b.AttackedSquares[opponentColor][m.Destination][i]); //Value of the nth defender of the piece we're trying to capture
                     if (currentDefenderScore <= currentAttackerScore) score -= currentAttackerScore; //If it's less than or equal value, it could capture back

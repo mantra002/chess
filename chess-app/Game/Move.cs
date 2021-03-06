@@ -29,7 +29,7 @@ namespace Chess.Game
         public Colors SideToMove;
         public Squares AllowsEnPassantTarget;
 
-        public Move(Colors sideToPlay, byte piece, byte origin, byte destination, int pieceListIndex=-1, byte pieceCaptured = 0, CastleFlags castleFlag = CastleFlags.None, Squares allowsEnPassantTarget = Squares.None, byte promoteIntoPiece = 0) 
+        public Move(Colors sideToPlay, byte piece, byte origin, byte destination, int pieceListIndex = -1, byte pieceCaptured = 0, CastleFlags castleFlag = CastleFlags.None, Squares allowsEnPassantTarget = Squares.None, byte promoteIntoPiece = 0)
         {
             Piece = piece;
             Origin = origin;
@@ -58,7 +58,7 @@ namespace Chess.Game
             if (compareMove == null)
                 return 1;
 
-            else if(compareMove.MoveScore == 999999999) //If no score set 
+            else if (compareMove.MoveScore == 999999999) //If no score set 
                 return this.ToString().CompareTo(compareMove.ToString());
 
             else return this.MoveScore.CompareTo(compareMove.MoveScore);
@@ -66,10 +66,10 @@ namespace Chess.Game
         public Move(string move, Board b)
         {
             move = move.Trim();
-            (Origin, Destination) = GetSquaresFromString(move);
+            (Origin, Destination) = GetSquaresFromString(move, b);
             Piece = b.GameBoard[Origin];
 
-            
+
             SideToMove = b.ColorToMove;
             if (Destination == (byte)b.EnPassantTarget)
             {
@@ -88,9 +88,9 @@ namespace Chess.Game
                 PieceCaptured = b.GameBoard[Destination];
             }
             CastleFlags = CastleFlags.None;
-            if(SideToMove == Colors.White)
+            if (SideToMove == Colors.White)
             {
-                           
+
                 if (Origin == 255)
                 {
                     CastleFlags = CastleFlags.WhiteShortCastle;
@@ -111,10 +111,10 @@ namespace Chess.Game
                     CastleFlags = CastleFlags.BlackLongCastle;
                 }
             }
-  
-            if(move.Length == 5 && move != "O-O-O")
+
+            if (move.Length == 5 && move != "O-O-O")
             {
-                switch(move[4])
+                switch (move[4])
                 {
                     case 'b':
                         PromoteIntoPiece = (byte)((byte)PieceNames.Bishop | (byte)SideToMove);
@@ -131,13 +131,13 @@ namespace Chess.Game
                 }
             }
 
-            if((Piece & (byte) PieceNames.Pawn) == (byte)PieceNames.Pawn)
+            if ((Piece & (byte)PieceNames.Pawn) == (byte)PieceNames.Pawn)
             {
-                if(Origin - Destination == 16)
+                if (Origin - Destination == 16)
                 {
-                    AllowsEnPassantTarget = (Squares)(Origin-8); 
+                    AllowsEnPassantTarget = (Squares)(Origin - 8);
                 }
-                else if(Origin - Destination == -16)
+                else if (Origin - Destination == -16)
                 {
                     AllowsEnPassantTarget = (Squares)(Origin + 8);
                 }
@@ -147,25 +147,43 @@ namespace Chess.Game
                 }
 
             }
-            
+
 
         }
-        public static (byte, byte) GetSquaresFromString(string move)
+        public static (byte, byte) GetSquaresFromString(string move, Board b)
         {
-            if (move == "O-O")
-            {
-                return (255, 255);
-            }
-            if (move == "O-O-O")
-            {
-                return (254, 254);
-            }
+
             string origin = move.Substring(0, 2);
             string destination = move.Substring(2, 2);
             Squares originS, destinationS;
             Enum.TryParse(origin, out originS);
             Enum.TryParse(destination, out destinationS);
 
+            if ((b.GameBoard[(byte)originS] & (byte)PieceNames.King) != 0)
+            {
+                if (b.ColorToMove == Colors.White)
+                {
+                    if (move == "e1g1")
+                    {
+                        return (255, 255);
+                    }
+                    if (move == "e1c1")
+                    {
+                        return (254, 254);
+                    }
+                }
+                else
+                {
+                    if (move == "e8g8")
+                    {
+                        return (255, 255);
+                    }
+                    if (move == "e8c8")
+                    {
+                        return (254, 254);
+                    }
+                }
+            }
             return ((byte)originS, (byte)destinationS);
         }
         public override string ToString()

@@ -12,13 +12,15 @@ namespace Chess.Engine
     public class TranspositionTable
     {
         Position[] tt;
-        public int TableSizeInMb;
+        public uint TableSizeInMb;
         readonly ulong TableSizeInPositions;
+        ulong TtEntries = 0;
+        public double PercentFull { get { return TtEntries / (double)TableSizeInPositions; } }
 
-        public TranspositionTable(int sizeInMb = 32)
+        public TranspositionTable(uint sizeInMb = 512)
         {
             TableSizeInMb = sizeInMb;
-            TableSizeInPositions = (ulong) sizeInMb* 1000000 / (ulong)(Position.GetSize());
+            TableSizeInPositions = (ulong)sizeInMb * 1000000 / (ulong)(Position.GetSize());
             tt = new Position[TableSizeInPositions];
 #if DEBUG
             Console.WriteLine("Intializing Transposition Table with " + TableSizeInMb + "mb of space");
@@ -68,6 +70,7 @@ namespace Chess.Engine
             //Console.WriteLine("Saving position with key " + key + " at index " + GetTTIndex(key));
             Position p = new Position(key, score, movePlayed, depth, nt);
             tt[GetTTIndex(key)] = p;
+            TtEntries++;
         }
 
         public enum NodeType

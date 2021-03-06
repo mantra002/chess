@@ -142,7 +142,7 @@ namespace Chess.Game
             {
                 List<byte> blockingSquares = FindBlockingSquares(piecesAttacking[0], kingSquare);
                 int numberOfPieces = b.PieceList.Count();
-                
+
                 foreach (byte bSquare in blockingSquares)
                 {
                     if (b.AttackedSquares[(byte)b.ColorToMove - 1][bSquare] != null)
@@ -222,7 +222,7 @@ namespace Chess.Game
                     }
                     else if ((defendingPiece & (byte)PieceNames.Pawn) == (byte)PieceNames.Pawn && !PinCheckByRay(b, decodeDefenderPos, decodeLocation, b.ColorToMove))
                     {
-                        
+
                         if (((b.ColorToMove == Colors.White && decodeDefenderPos < 8) || (b.ColorToMove == Colors.Black && decodeDefenderPos > 55)))
                         {
                             if (promo == promotionAllowed.All)
@@ -314,7 +314,7 @@ namespace Chess.Game
             }
             else
             {
-                if ((distance < 0 && -distance > MoveData.DistanceToEdge[pieceLocation1][(byte)MoveData.MoveDirectionsIndex.Left]) || 
+                if ((distance < 0 && -distance > MoveData.DistanceToEdge[pieceLocation1][(byte)MoveData.MoveDirectionsIndex.Left]) ||
                     (distance > 0 && distance > MoveData.DistanceToEdge[pieceLocation1][(byte)MoveData.MoveDirectionsIndex.Right]))
                 {
                     return false;
@@ -345,12 +345,12 @@ namespace Chess.Game
             byte decodeLocation;
             List<ushort>[] attackMap = new List<ushort>[64];
             List<ushort>[] attackMapWithoutPins = new List<ushort>[64];
-            
+
 
             if (sideToGenerateAttacksFor == 0) side = b.ColorToMove;
             else side = sideToGenerateAttacksFor;
 
-            byte kingSquare = b.KingSquares[2-(byte)side];
+            byte kingSquare = b.KingSquares[2 - (byte)side];
             int numberOfPieces = b.PieceList.Count;
             for (int index = 0; index < numberOfPieces; index++)
             {
@@ -373,7 +373,7 @@ namespace Chess.Game
                     else if ((decodePiece & (byte)PieceNames.Knight) == (byte)PieceNames.Knight)
                     {
                         GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.AvailibleKnightMoves[decodeLocation], ref attackMap, ref attackMapWithoutPins);
-                    }  
+                    }
                     else if ((decodePiece & (byte)PieceNames.Bishop) == (byte)PieceNames.Bishop)
                     {
                         GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FBishopMoves, decodeLocation, b, kingSquare), ref attackMap, ref attackMapWithoutPins);
@@ -528,7 +528,7 @@ namespace Chess.Game
                         bool defenderFound = false;
                         foreach (byte potD in potentialDefenders)
                         {
-                            if (b.GameBoard[potD] != 0) defenderFound = true ;
+                            if (b.GameBoard[potD] != 0) defenderFound = true;
                         }
                         if (!defenderFound) return true;
                         //Console.WriteLine("Looking at moving the " + Pieces.DecodePieceToChar(b.GameBoard[origin]) + " at " + origin + " but it's pinned to the king.");
@@ -546,10 +546,10 @@ namespace Chess.Game
             byte checkPieceLocation;
             byte opponentColor = (byte)(2 - (byte)b.ColorToMove);
             byte kingSquare = b.KingSquares[(byte)b.ColorToMove - 1];
-            
+
             //Need to get the square where the pawn is now.
-            if (b.ColorToMove == Colors.White) epSquare += 8; 
-            else epSquare -= 8; 
+            if (b.ColorToMove == Colors.White) epSquare += 8;
+            else epSquare -= 8;
 
             if (b.AttackedSquaresWithoutPins[opponentColor] == null) return false;
             if (b.AttackedSquaresWithoutPins[opponentColor][epSquare] != null)
@@ -646,7 +646,7 @@ namespace Chess.Game
                     destinationPiece = b.GameBoard[destination];
                     //Don't need to worry about a pawn move (non-capture) happening here, only a diagonal move
                     //can get into the EP square.
-                    if (destination == (byte)b.EnPassantTarget && isPawn && includeCaptures && destinationPiece == 0 &&!EpPinCheck(b, origin, (byte)b.EnPassantTarget))
+                    if (destination == (byte)b.EnPassantTarget && isPawn && includeCaptures && destinationPiece == 0 && !EpPinCheck(b, origin, (byte)b.EnPassantTarget))
                     {
                         if (b.ColorToMove == Colors.White)
                         {
@@ -725,12 +725,12 @@ namespace Chess.Game
                                         candidateMoves.Add(m);
                                     }
                                 }
-                                else if(promo == promotionAllowed.QueenOrKnight)
+                                else if (promo == promotionAllowed.QueenOrKnight)
                                 {
                                     candidateMoves.Add(new Move(b.ColorToMove, b.GameBoard[origin], origin, destination, plIndex, destinationPiece, promoteIntoPiece: (byte)((byte)PieceNames.Queen | (byte)b.ColorToMove)));
                                     candidateMoves.Add(new Move(b.ColorToMove, b.GameBoard[origin], origin, destination, plIndex, destinationPiece, promoteIntoPiece: (byte)((byte)PieceNames.Knight | (byte)b.ColorToMove)));
                                 }
-                                else if(promo == promotionAllowed.QueenOnly)
+                                else if (promo == promotionAllowed.QueenOnly)
                                 {
                                     candidateMoves.Add(new Move(b.ColorToMove, b.GameBoard[origin], origin, destination, plIndex, destinationPiece, promoteIntoPiece: (byte)((byte)PieceNames.Queen | (byte)b.ColorToMove)));
                                 }

@@ -22,7 +22,7 @@ namespace Chess.Test
                 case 0:
                     Assert.AreEqual(1, perft);
                     break;
-                 case 1:
+                case 1:
                     Assert.AreEqual(20, perft);
                     break;
                 case 2:
@@ -34,7 +34,7 @@ namespace Chess.Test
                 case 4:
                     Assert.AreEqual(197281, perft);
                     break;
-                }
+            }
 
         }
         [DataTestMethod]

@@ -7,6 +7,7 @@ using static System.Math;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
 using System.Runtime.Serialization;
+using System.Diagnostics;
 
 namespace Chess.Engine
 {
@@ -17,13 +18,11 @@ namespace Chess.Engine
     public class Search
     {
         public short TargetDepth = 6;
-        const short MaximumQuiescenceSearchDepth = 10;
-        const bool IterativeDeepeningEnable = true;
-        const bool QuiescenceSearchEnable = true;
-        const bool UseMoveOrdering = true;
+
         Board board;
-        int BestEval;
-        Move BestMove;
+        public int BestEval;
+        public Move BestMove;
+        public bool AbortSearch = false;
 
         TranspositionTable tt;
 
@@ -31,69 +30,92 @@ namespace Chess.Engine
         const int PositiveInfinity = 9999999;
         const int NegativeInfinity = -PositiveInfinity;
 
-        List<Move> PrincipalVariation;
+        public Move[] PrincipalVariation;
 
         Move BestMoveSoFar;
         int BestEvalSoFar;
 
-        int numNodes;
-        int numDeltaCutoffs;
-        int numCutoffCount;
-        int numTTHit;
-        int numSeeCutoff;
-        int qDepth;
+        public int numNodes;
+        public int numDeltaCutoffs;
+        public int numCutoffCount;
+        public int numTTHit;
+        public int numSeeCutoff;
+        public int qDepth;
+        public int nodesPerSecond;
 
+        private Stopwatch sw = new Stopwatch();
+        SearchSettings SearchSetting;
 
-        public Search(Board b)
+        public Search(Board b, SearchSettings ss)
         {
-            this.board = b;
-            tt = new TranspositionTable();
+            this.SearchSetting = ss;
+            tt = new TranspositionTable(ss.TranspositionTableSizeMb);
         }
 
-        public void StartSearch(short depth)
+        public void StartSearch(short depth, Board b, bool writeOutput)
         {
+            this.board = b;
             this.TargetDepth = depth;
-            PrincipalVariation = new List<Move>();
             numTTHit = numCutoffCount = numNodes = 0;
-  
+
             BestEval = BestEvalSoFar = qDepth = 0;
             BestMove = BestMoveSoFar = null;
 
-            if(IterativeDeepeningEnable)
+            sw.Start();
+            if (SearchSetting.IterativeDeepeningEnable)
             {
-                for(int i = 1; i <= TargetDepth; i++)
+                for (int i = 1; i <= TargetDepth; i++)
                 {
+                    PrincipalVariation = new Move[i];
                     DoSearch(i, 0, NegativeInfinity, PositiveInfinity);
-                    PrintSearchStats(i);
+                    if (AbortSearch)
+                    {
+                        AbortSearch = false;
+                        sw.Reset();
+                        return;
+                    }
+                    nodesPerSecond = (int)(numNodes / (sw.ElapsedMilliseconds / 1000.0));
                     BestMove = BestMoveSoFar;
                     BestEval = BestEvalSoFar;
+                    PrintSearchStats(i);
                 }
             }
             else
             {
-                DoSearch (TargetDepth, 0, NegativeInfinity, PositiveInfinity);
+                DoSearch(TargetDepth, 0, NegativeInfinity, PositiveInfinity);
                 BestMove = BestMoveSoFar;
                 BestEval = BestEvalSoFar;
+                nodesPerSecond = (int)(numNodes / (sw.ElapsedMilliseconds / 1000.0));
                 PrintSearchStats(TargetDepth);
             }
+            sw.Reset();
+
         }
         public void PrintSearchStats(int depth)
         {
-            Console.WriteLine("".PadLeft(8, '='));
-            Console.WriteLine("Depth: " + depth + "/" + qDepth);
-            Console.WriteLine("Nodes: " + numNodes);
-            Console.WriteLine("TT Hits: " + numTTHit);
-            Console.WriteLine("Cutoffs: ");
-            Console.WriteLine("  Beta: "+ numCutoffCount);
-            Console.WriteLine("  Delta: " + numDeltaCutoffs);
-            Console.WriteLine("  SEE: " + numSeeCutoff);
-            Console.WriteLine("Move: " + BestMoveSoFar.ToString());
-            Console.WriteLine("Score: " + BestEvalSoFar);
-            Console.WriteLine("".PadLeft(8, '='));
+            StringBuilder sb = new StringBuilder();
+
+            sb.Append("info depth ");
+            sb.Append(depth);
+            sb.Append(" seldepth ");
+            sb.Append(qDepth);
+            sb.Append(" nodes ");
+            sb.Append(numNodes);
+            sb.Append(" nps ");
+            sb.Append(nodesPerSecond);
+            sb.Append(" score cp ");
+            sb.Append(BestEval);
+            sb.Append(" pv ");
+            for (int i = 0; i < depth; i++)
+            {
+                if(PrincipalVariation[i] != null) sb.Append(PrincipalVariation[i].ToString() + " ");
+            }
+            Console.WriteLine(sb.ToString());
         }
-        private int DoSearch(int depth, int plyFromRoot, int alpha, int beta, Board b = null)
+        private int DoSearch(int depth, int plyFromRoot, int alpha, int beta)
         {
-            if (b == null) b = this.board;
+            int eval;
+            if (AbortSearch) return 0;
             if (plyFromRoot > 0)
             {
                 alpha = Max(alpha, -MateScore + plyFromRoot);
@@ -105,26 +127,27 @@ namespace Chess.Engine
             }
 
             int ttLookupScore = tt.LookupScore(board.ZobristHash, depth, plyFromRoot, alpha, beta);
-            if(ttLookupScore != int.MinValue)
+            if (ttLookupScore != int.MinValue)
             {
                 numTTHit++;
-                if(plyFromRoot == 0)
+                if (plyFromRoot == 0)
                 {
                     TranspositionTable.Position p = tt.LookupPosition(board.ZobristHash);
                     BestMoveSoFar = p.MovePlayed;
                     BestEvalSoFar = p.Score;
+                    PrincipalVariation[plyFromRoot] = p.MovePlayed;
                 }
                 return ttLookupScore;
             }
 
             if (depth == 0)
             {
-                if(QuiescenceSearchEnable) return QuiescenceSearch(alpha, beta, plyFromRoot+1);
+                if (SearchSetting.QuiescenceSearchEnable) return QuiescenceSearch(alpha, beta, plyFromRoot + 1, SearchSetting);
                 else return Evaluation.Evaluate(board);
             }
 
             List<Move> moves = MoveGeneration.GenerateLegalMoves(board);
-            if(UseMoveOrdering) MoveOrdering.OrderMoves(board, tt, moves);
+            if (SearchSetting.UseMoveOrdering) MoveOrdering.OrderMoves(board, tt, moves);
             // Detect checkmate and stalemate when no legal moves are available
             if (moves.Count == 0)
             {
@@ -146,7 +169,8 @@ namespace Chess.Engine
             for (int i = 0; i < moves.Count; i++)
             {
                 board.PlayMove(moves[i]);
-                int eval = -DoSearch(depth - 1, plyFromRoot + 1, -beta, -alpha);
+                eval = -DoSearch(depth - 1, plyFromRoot + 1, -(alpha + 1), -alpha);
+                if (alpha < eval && eval < beta) eval = -DoSearch(depth - 1, plyFromRoot + 1, -beta, -alpha);
                 board.UndoMove(moves[i]);
                 numNodes++;
 
@@ -154,7 +178,7 @@ namespace Chess.Engine
                 // (by choosing a different move earlier on). Skip remaining moves.
                 if (eval >= beta)
                 {
-                    tt.AddPosition(board.ZobristHash, beta, moves[i], (byte) depth, TranspositionTable.NodeType.LowerBound);
+                    tt.AddPosition(board.ZobristHash, beta, moves[i], (byte)depth, TranspositionTable.NodeType.LowerBound);
                     numCutoffCount++;
                     return beta;
                 }
@@ -163,6 +187,7 @@ namespace Chess.Engine
                 if (eval > alpha)
                 {
                     bestMoveInThisPosition = moves[i];
+                    PrincipalVariation[plyFromRoot] = moves[i];
                     nodeType = TranspositionTable.NodeType.Exact;
                     alpha = eval;
                     if (plyFromRoot == 0)
@@ -176,7 +201,7 @@ namespace Chess.Engine
             return alpha;
 
         }
-     
+
         public (int score, Move m, int MateInPly) CurrentSearchResult()
         {
             int mateInPly = -1;
@@ -187,7 +212,7 @@ namespace Chess.Engine
             return (BestEval, BestMove, mateInPly);
         }
 
-        private int QuiescenceSearch(int alpha, int beta, int plyFromRoot)
+        private int QuiescenceSearch(int alpha, int beta, int plyFromRoot, SearchSettings ss)
         {
             qDepth = Max(plyFromRoot, qDepth);
             int eval = Evaluation.Evaluate(board);
@@ -196,7 +221,7 @@ namespace Chess.Engine
             {
                 return beta;
             }
-            if(eval < alpha - Evaluation.QueenValue)
+            if (eval < alpha - Evaluation.QueenValue)
             {
                 numDeltaCutoffs++;
                 return alpha;
@@ -207,14 +232,15 @@ namespace Chess.Engine
             }
 
             List<Move> moves = MoveGeneration.GenerateLegalMoves(board, includeQuietMoves: false);
-            if (UseMoveOrdering) MoveOrdering.OrderMoves(board, tt, moves, UseSEE: true);
+            if (ss.UseMoveOrdering) MoveOrdering.OrderMoves(board, tt, moves, UseSEE: true);
             //Order moves
             for (int i = 0; i < moves.Count; i++)
             {
                 if (moves[i].MoveScore < Evaluation.SeeCutoff)
                 {
                     board.PlayMove(moves[i]);
-                    eval = -QuiescenceSearch(-beta, -alpha, plyFromRoot + 1);
+                    eval = -QuiescenceSearch(-(alpha + 1), -alpha, plyFromRoot + 1, ss);
+                    if (alpha < eval && eval < beta) eval = -QuiescenceSearch(-beta, -alpha, plyFromRoot + 1, ss);
                     board.UndoMove(moves[i]);
                     this.numNodes++;
 

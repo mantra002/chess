@@ -7,18 +7,26 @@ using System.Threading.Tasks;
 namespace Chess.Management
 {
     using Chess.Game;
+    using Chess.Engine;
     public class GameManager
     {
         public Board Board;
+        public Search AbSearch;
         public Random r;
+        public SearchSettings SearchSet = new SearchSettings();
 
         public GameManager(string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") : this(new Board(fen))
         {
         }
 
+        public void PerformSearch(short depth)
+        {
+            AbSearch.StartSearch(depth,this.Board, true);
+        }
         public GameManager(Board b)
         {
             Board = b;
+            AbSearch = new Search(Board, SearchSet);
             r = new Random();
         }
         public void GenerateAndPlayRandomMove()
@@ -55,10 +63,10 @@ namespace Chess.Management
             GameManager gm = new GameManager();
             long count;
             sw.Start();
-            for (int i = 0; i < depth+1; i++)
+            for (int i = 0; i < depth + 1; i++)
             {
                 count = gm.Perft(i);
-                Console.WriteLine("Perft result depth: " + i + " Result: " + count + " Time: " + sw.ElapsedMilliseconds + "ms kN/S: " + Math.Round((double)count/(sw.ElapsedMilliseconds)).ToString());
+                Console.WriteLine("Perft result depth: " + i + " Result: " + count + " Time: " + sw.ElapsedMilliseconds + "ms kN/S: " + Math.Round((double)count / (sw.ElapsedMilliseconds)).ToString());
             }
             sw.Stop();
         }
@@ -83,7 +91,7 @@ namespace Chess.Management
                 nodes += Perft(depth - 1);
                 this.Board.UndoMove(moves[i]);
             }
-           
+
 
             return nodes;
         }
@@ -100,7 +108,7 @@ namespace Chess.Management
             bool InCheck = Board.InCheck;
             bool CheckMate = Board.CheckMate;
             byte[] KingSquares = Board.KingSquares;
-            
+
 
             byte[] originalBoard = new byte[64];
             List<ushort> originalPieceList = this.Board.PieceList.ConvertAll(x => x);
@@ -135,7 +143,7 @@ namespace Chess.Management
                         Console.WriteLine("Original Board has " + originalBoard[i]);
                         Console.WriteLine("Current board has " + this.Board.GameBoard[i]);
                         this.PrintBoard();
-                        Console.WriteLine("".PadLeft(10,'='));
+                        Console.WriteLine("".PadLeft(10, '='));
                     }
                 }
 
@@ -144,7 +152,7 @@ namespace Chess.Management
                 {
                     if (!this.Board.PieceList.Contains(og)) Console.WriteLine("Piecelists are not identical");
                 }
-                if(ColorToMove != Board.ColorToMove) Console.WriteLine("Color to play desynced!");
+                if (ColorToMove != Board.ColorToMove) Console.WriteLine("Color to play desynced!");
                 if (CastleMask != Board.CastleMask) Console.WriteLine("Castle mask desynced!"); //White Short - White Long - Black Short - Black Long
                 if (EnPassantTarget != Board.EnPassantTarget) Console.WriteLine("EP target desynced!");
                 if (InCheck != Board.InCheck) Console.WriteLine("In check desynced!");

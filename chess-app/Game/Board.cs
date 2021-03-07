@@ -367,7 +367,7 @@ namespace Chess.Game
                 ColorToMove = Colors.White;
             }
             GameState gs = GameHistory.Pop();
-            if (MoveCounter == 0)
+            if (GameHistory.Count == 0)
             {
                 EnPassantTarget = EnPassantTargetTimeZero;
 

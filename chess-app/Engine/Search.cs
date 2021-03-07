@@ -9,6 +9,8 @@ using System.IO;
 using System.Runtime.Serialization;
 using System.Diagnostics;
 
+// Based on a combination of this https://github.com/SebLague/Chess-AI and https://en.wikipedia.org/wiki/Principal_variation_search 
+
 namespace Chess.Engine
 {
     using Chess.Game;
@@ -23,7 +25,6 @@ namespace Chess.Engine
 
         TranspositionTable tt;
 
-        const int MateScore = 100000;
         const int PositiveInfinity = 9999999;
         const int NegativeInfinity = -PositiveInfinity;
 
@@ -35,6 +36,7 @@ namespace Chess.Engine
 
         Move BestMoveSoFar;
         int BestEvalSoFar;
+        int MateInPly;
 
         public int numNodes;
         public int numDeltaCutoffs;
@@ -94,7 +96,10 @@ namespace Chess.Engine
                     nodesPerSecond = (int)(numNodes / (sw.ElapsedMilliseconds / 1000.0));
                     BestMove = BestMoveSoFar;
                     BestEval = BestEvalSoFar;
+                    MateInPly = GetMateInNMoves();
                     PrintSearchStats(i);
+
+                    if (MateInPly != -1 && i > 10) break;
                 }
             }
             else
@@ -103,6 +108,7 @@ namespace Chess.Engine
                 BestMove = BestMoveSoFar;
                 BestEval = BestEvalSoFar;
                 nodesPerSecond = (int)(numNodes / (sw.ElapsedMilliseconds / 1000.0));
+                MateInPly = GetMateInNMoves();
                 PrintSearchStats(TargetDepth);
             }
             sw.Reset();
@@ -122,7 +128,6 @@ namespace Chess.Engine
             {
                 realDepth = BookMoves.Count + depth;
             }
-
             StringBuilder sb = new StringBuilder();
 
             sb.Append("info depth ");
@@ -133,8 +138,16 @@ namespace Chess.Engine
             sb.Append(numNodes);
             sb.Append(" nps ");
             sb.Append(nodesPerSecond);
-            sb.Append(" score cp ");
-            sb.Append(BestEval);
+            if (MateInPly == -1)
+            {
+                sb.Append(" score cp ");
+                sb.Append(BestEval);
+            }
+            else
+            {
+                sb.Append(" score mate ");
+                sb.Append(MateInPly * Math.Sign(BestEval));
+            }
             sb.Append(" pv ");
             if (SearchSetting.UseOpeningBook && BookMoves != null)
             {
@@ -158,10 +171,11 @@ namespace Chess.Engine
          
             if (plyFromRoot > 0)
             {
-                alpha = Max(alpha, -MateScore + plyFromRoot);
-                beta = Min(beta, MateScore - plyFromRoot);
+                alpha = Max(alpha, -Evaluation.MateValue + plyFromRoot);
+                beta = Min(beta, Evaluation.MateValue - plyFromRoot);
                 if (alpha >= beta)
                 {
+                    //Mate has been found
                     return alpha;
                 }
             }
@@ -188,17 +202,18 @@ namespace Chess.Engine
 
             List<Move> moves = MoveGeneration.GenerateLegalMoves(board);
             if (SearchSetting.UseMoveOrdering) MoveOrdering.OrderMoves(board, tt, moves);
-            // Detect checkmate and stalemate when no legal moves are available
+            // Detect checkmate and stalemate, could use the board states for this.
             if (moves.Count == 0)
             {
                 if (board.InCheck)
                 {
-                    int mateScore = MateScore - plyFromRoot;
+                    //Checkmate
+                    int mateScore = Evaluation.MateValue - plyFromRoot;
                     return -mateScore;
                 }
                 else
                 {
-                    return 0;
+                    return 0; //Stalemate
                 }
             }
 
@@ -208,48 +223,47 @@ namespace Chess.Engine
 
             for (int i = 0; i < moves.Count; i++)
             {
-                board.PlayMove(moves[i]);
-                eval = -DoSearch(depth - 1, plyFromRoot + 1, -(alpha + 1), -alpha);
-                if (alpha < eval && eval < beta) eval = -DoSearch(depth - 1, plyFromRoot + 1, -beta, -alpha);
-                board.UndoMove(moves[i]);
-                numNodes++;
+                    board.PlayMove(moves[i]);
+                    eval = -DoSearch(depth - 1, plyFromRoot + 1, -(alpha + 1), -alpha);
+                    if (alpha < eval && eval < beta) eval = -DoSearch(depth - 1, plyFromRoot + 1, -beta, -alpha);
+                    board.UndoMove(moves[i]);
+                    numNodes++;
 
-                // Move was *too* good, so opponent won't allow this position to be reached
-                // (by choosing a different move earlier on). Skip remaining moves.
-                if (eval >= beta)
-                {
-                    tt.AddPosition(board.ZobristHash, beta, moves[i], (byte)depth, TranspositionTable.NodeType.LowerBound);
-                    numCutoffCount++;
-                    return beta;
-                }
-
-                // Found a new best move in this position
-                if (eval > alpha)
-                {
-                    bestMoveInThisPosition = moves[i];
-                    PrincipalVariation[plyFromRoot] = moves[i];
-                    nodeType = TranspositionTable.NodeType.Exact;
-                    alpha = eval;
-                    if (plyFromRoot == 0)
+                    // Beta cutoff
+                    if (eval >= beta)
                     {
-                        BestMoveSoFar = moves[i];
-                        BestEvalSoFar = eval;
+                        tt.AddPosition(board.ZobristHash, beta, moves[i], (byte)depth, TranspositionTable.NodeType.LowerBound);
+                        numCutoffCount++;
+                        return beta;
+                    }
+
+                    // New best move
+                    if (eval > alpha)
+                    {
+                        bestMoveInThisPosition = moves[i];
+                        PrincipalVariation[plyFromRoot] = moves[i];
+                        nodeType = TranspositionTable.NodeType.Exact;
+                        alpha = eval;
+                        if (plyFromRoot == 0)
+                        {
+                            BestMoveSoFar = moves[i];
+                            BestEvalSoFar = eval;
+                        }
                     }
                 }
-            }
             tt.AddPosition(board.ZobristHash, beta, BestMoveSoFar, (byte)depth, nodeType);
             return alpha;
 
         }
 
-        public (int score, Move m, int MateInPly) CurrentSearchResult()
+        public int GetMateInNMoves()
         {
             int mateInPly = -1;
             if (Math.Abs(BestEval) > Evaluation.MateValue - 1000)
             {
                 mateInPly = Evaluation.MateValue - Math.Abs(BestEval);
             }
-            return (BestEval, BestMove, mateInPly);
+            return mateInPly;
         }
 
         private int QuiescenceSearch(int alpha, int beta, int plyFromRoot, SearchSettings ss)
@@ -276,30 +290,30 @@ namespace Chess.Engine
             //Order moves
             for (int i = 0; i < moves.Count; i++)
             {
-                if (moves[i].MoveScore < Evaluation.SeeCutoff)
-                {
-                    board.PlayMove(moves[i]);
-                    eval = -QuiescenceSearch(-(alpha + 1), -alpha, plyFromRoot + 1, ss);
-                    if (alpha < eval && eval < beta) eval = -QuiescenceSearch(-beta, -alpha, plyFromRoot + 1, ss);
-                    board.UndoMove(moves[i]);
-                    this.numNodes++;
+                    if (moves[i].MoveScore < Evaluation.SeeCutoff)
+                    {
+                        board.PlayMove(moves[i]);
+                        eval = -QuiescenceSearch(-(alpha + 1), -alpha, plyFromRoot + 1, ss);
+                        if (alpha < eval && eval < beta) eval = -QuiescenceSearch(-beta, -alpha, plyFromRoot + 1, ss);
+                        board.UndoMove(moves[i]);
+                        this.numNodes++;
 
-                    if (eval >= beta)
-                    {
-                        this.numCutoffCount++;
-                        return beta;
+                        if (eval >= beta)
+                        {
+                            this.numCutoffCount++;
+                            return beta;
+                        }
+                        if (eval > alpha)
+                        {
+                            alpha = eval;
+                        }
                     }
-                    if (eval > alpha)
+                    else
                     {
-                        alpha = eval;
+                        numSeeCutoff++;
+                        return alpha;
                     }
                 }
-                else
-                {
-                    numSeeCutoff++;
-                    return alpha;
-                }
-            }
 
             return alpha;
         }

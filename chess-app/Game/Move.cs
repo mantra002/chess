@@ -66,7 +66,40 @@ namespace Chess.Game
         public Move(string move, Board b)
         {
             move = move.Trim();
+            SideToMove = b.ColorToMove;
             (Origin, Destination) = GetSquaresFromString(move, b);
+            CastleFlags = CastleFlags.None;
+            if (SideToMove == Colors.White)
+            {
+
+                if (Origin == 255)
+                {
+                    CastleFlags = CastleFlags.WhiteShortCastle;
+                    Origin = (byte)Squares.e1;
+                    Destination = (byte)Squares.g1;
+                }
+                else if (Origin == 254)
+                {
+                    CastleFlags = CastleFlags.WhiteLongCastle;
+                    Origin = (byte)Squares.e1;
+                    Destination = (byte)Squares.c1;
+                }
+            }
+            else
+            {
+                if (Origin == 255)
+                {
+                    CastleFlags = CastleFlags.BlackShortCastle;
+                    Origin = (byte)Squares.e8;
+                    Destination = (byte)Squares.g8;
+                }
+                else if (Origin == 254)
+                {
+                    CastleFlags = CastleFlags.BlackLongCastle;
+                    Origin = (byte)Squares.e8;
+                    Destination = (byte)Squares.c8;
+                }
+            }
             Piece = b.GameBoard[Origin];
 
 
@@ -87,32 +120,9 @@ namespace Chess.Game
                 CaptureEnPassant = false;
                 PieceCaptured = b.GameBoard[Destination];
             }
-            CastleFlags = CastleFlags.None;
-            if (SideToMove == Colors.White)
-            {
+            
 
-                if (Origin == 255)
-                {
-                    CastleFlags = CastleFlags.WhiteShortCastle;
-                }
-                else if (Origin == 254)
-                {
-                    CastleFlags = CastleFlags.WhiteLongCastle;
-                }
-            }
-            else
-            {
-                if (Origin == 255)
-                {
-                    CastleFlags = CastleFlags.BlackShortCastle;
-                }
-                else if (Origin == 254)
-                {
-                    CastleFlags = CastleFlags.BlackLongCastle;
-                }
-            }
-
-            if (move.Length == 5 && move != "O-O-O")
+            if (move.Length == 5)
             {
                 switch (move[4])
                 {
@@ -193,8 +203,10 @@ namespace Chess.Game
                 if (this.PromoteIntoPiece == 0) return Board.BoardIndexToString(this.Origin) + Board.BoardIndexToString(this.Destination);
                 else return Board.BoardIndexToString(this.Origin) + Board.BoardIndexToString(this.Destination) + Pieces.DecodePieceToChar(this.PromoteIntoPiece);
             }
-            else if (CastleFlags == CastleFlags.BlackShortCastle || CastleFlags == CastleFlags.WhiteShortCastle) return "O-O";
-            else return "O-O-O";
+            else if (CastleFlags == CastleFlags.WhiteShortCastle) return "e1g1";
+            else if (CastleFlags == CastleFlags.BlackShortCastle) return "e8g8";
+            else if (CastleFlags == CastleFlags.BlackLongCastle) return "e8c8";
+            else return "e1c1";
         }
     }
 }

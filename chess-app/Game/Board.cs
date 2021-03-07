@@ -398,6 +398,9 @@ namespace Chess.Game
                     }
                     else
                     {
+#if DEBUG
+                        Console.WriteLine("Adding " + c + " @ " + boardIndex);
+#endif
                         AddPiece(Pieces.EncodePieceFromChar(c), boardIndex++);
                     }
                 }

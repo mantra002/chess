@@ -11,7 +11,7 @@ namespace Chess.Interface
     {
         private Management.GameManager gmgr;
         Thread search;
-
+        
         public void StartCommandLoop()
         {
             gmgr = new Management.GameManager();
@@ -39,15 +39,7 @@ namespace Chess.Interface
                     case "position":
                         if (splitCmd.Length >= 3)
                         {
-                            if (splitCmd[1].ToLowerInvariant() == "fen")
-                            {
-                                try
-                                {
-                                    gmgr.Board = new Game.Board(command.Substring(14));
-                                }
-                                catch(Exception e) { Console.WriteLine(e.ToString()); }
-                            }
-                            else Position(splitCmd[1], splitCmd);
+                            Position(splitCmd[1], splitCmd);
                         }
                         else Console.WriteLine("Position error");
                         break;
@@ -65,6 +57,9 @@ namespace Chess.Interface
                     case "ucinewgame":
                         gmgr = new Management.GameManager();
                         break;
+                    default:
+                        Console.WriteLine("Invalid command");
+                        break;
                 }
             }
         }
@@ -73,7 +68,7 @@ namespace Chess.Interface
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("id name Simple Chess Engine");
             sb.AppendLine("id author Travis Hagen");
-            string[] options = { "QuiescenceSearch", "IterativeDeepening", "MoveOrdering", "StaticExchangeEvaluation" };
+            string[] options = { "QuiescenceSearch", "IterativeDeepening", "MoveOrdering", "StaticExchangeEvaluation","UseOpeningBook" };
             foreach (string s in options)
             {
                 sb.Append("option name ");
@@ -110,11 +105,31 @@ namespace Chess.Interface
 
         void Position(string fenOrStart, string[] splitCmd)
         {
-            gmgr.Board = new Game.Board();
-            for (int i = 3; i < splitCmd.Length; i++)
+            int moveIndex = 0;
+
+            if (fenOrStart.ToLowerInvariant() == "fen")
             {
-                gmgr.PlayMove(new Game.Move(splitCmd[i], gmgr.Board));
+                try
+                {
+                    string fen = string.Join(" ", splitCmd, 2, splitCmd.Length - 2);
+                    gmgr.Board = new Game.Board(fen);
+                }
+                catch (Exception e) { Console.WriteLine(e.ToString()); }
             }
+            else gmgr.Board = new Game.Board();
+            for(int i =0; i< splitCmd.Length; i++)
+            {
+                if(splitCmd[i] == "moves")
+                {
+                    moveIndex = i + 1;
+                    for (int j= moveIndex; j < splitCmd.Length; j++)
+                    {
+                        gmgr.PlayMove(new Game.Move(splitCmd[j], gmgr.Board));
+                    }
+                    break;
+                }
+            }
+
         }
 
         void Send(string commandToGui)

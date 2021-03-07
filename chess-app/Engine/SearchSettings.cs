@@ -13,5 +13,6 @@ namespace Chess.Engine
         public bool UseMoveOrdering = true;
         public bool UseSeeInQuiescenceSeach = true;
         public uint TranspositionTableSizeMb = 128;
+        public bool UseOpeningBook = false;
     }
 }

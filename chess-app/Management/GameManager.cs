@@ -12,6 +12,7 @@ namespace Chess.Management
     {
         public Board Board;
         public Search AbSearch;
+        public OpeningBook<string> OpeningBk;
         public Random r;
         public SearchSettings SearchSet = new SearchSettings();
 
@@ -21,11 +22,12 @@ namespace Chess.Management
 
         public void PerformSearch(short depth)
         {
-            AbSearch.StartSearch(depth,this.Board, true);
+            AbSearch.StartSearch(depth,this.Board);
         }
         public GameManager(Board b)
         {
             Board = b;
+            OpeningBk = OpeningBook<string>.InitializeOpeningBook();
             AbSearch = new Search(Board, SearchSet);
             r = new Random();
         }

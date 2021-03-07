@@ -96,6 +96,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Engine\Evaluation.cs" />
+    <Compile Include="Engine\OpeningBook.cs" />
     <Compile Include="Engine\PieceSquareTable.cs" />
     <Compile Include="Engine\SearchSettings.cs" />
     <Compile Include="Engine\TranspositionTable.cs" />
@@ -120,6 +121,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="Engine\data\opening-db.dat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

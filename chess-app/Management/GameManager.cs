@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+
 
 namespace Chess.Management
 {
@@ -15,19 +17,27 @@ namespace Chess.Management
         public OpeningBook<string> OpeningBk;
         public Random r;
         public SearchSettings SearchSet = new SearchSettings();
+        Thread search;
 
         public GameManager(string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") : this(new Board(fen))
         {
         }
 
-        public void PerformSearch(short depth)
+        public void PerformSearch(short depth, bool startingFromStartpos = false)
         {
-            AbSearch.StartSearch(depth,this.Board);
+            this.AbortSearch();
+            search = new Thread(() => AbSearch.StartSearch(depth, this.Board, startingFromStartpos));
+            search.IsBackground = true;
+            search.Start();
+        }
+        public void AbortSearch()
+        {
+            AbSearch.AbortSearch = true;
+            if (search != null) search.Join();
         }
         public GameManager(Board b)
         {
             Board = b;
-            OpeningBk = OpeningBook<string>.InitializeOpeningBook();
             AbSearch = new Search(Board, SearchSet);
             r = new Random();
         }

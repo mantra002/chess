@@ -10,7 +10,7 @@ namespace Chess.Interface
     public class UCI
     {
         private Management.GameManager gmgr;
-        Thread search;
+        bool startingFromStartpos = true;
 
         public void StartCommandLoop()
         {
@@ -33,9 +33,7 @@ namespace Chess.Interface
                     case "quit":
                         return;
                     case "go":
-                        search = new Thread(() => PerformSearchWithStatus(splitCmd));
-                        search.IsBackground = true;
-                        search.Start();
+                        PerformSearchWithStatus(splitCmd);
                         break;
                     case "position":
                         if (splitCmd.Length >= 3)
@@ -50,7 +48,7 @@ namespace Chess.Interface
                     case "setoption":
                         break;
                     case "stop":
-                        search.Abort();
+                        gmgr.AbortSearch();
                         if (gmgr.AbSearch.BestMove != null) Console.Write("bestmove " + gmgr.AbSearch.BestMove.ToString());
                         if (gmgr.AbSearch.PrincipalVariation.Count() >= 2 && gmgr.AbSearch.PrincipalVariation[1] != null) Console.Write(" ponder " + gmgr.AbSearch.PrincipalVariation[1]);
                         Console.WriteLine();
@@ -89,28 +87,27 @@ namespace Chess.Interface
                     if (splitCmd[1] == "depth")
                     {
                         depth = short.Parse(splitCmd[2]);
-                        gmgr.PerformSearch(depth);
+                        gmgr.PerformSearch(depth, startingFromStartpos);
                     }
                     else if (splitCmd[1] == "infinite")
                     {
-                        gmgr.PerformSearch(999);
+                        gmgr.PerformSearch(999, startingFromStartpos);
                     }
-                    else if (splitCmd[1] == "perft") gmgr.RunPerft(int.Parse(splitCmd[2]));
+                    else if (splitCmd[1] == "perft") gmgr.PerftDivided(int.Parse(splitCmd[2]));
                     else
                     {
                         gmgr.PerformSearch(7);
                         Console.WriteLine("bestmove " + gmgr.AbSearch.BestMove.ToString());
                     }
                 }
-            }
-            catch (ThreadAbortException e)
-            {
-
+                else { gmgr.PerformSearch(depth, startingFromStartpos); }
             }
             catch (Exception e) { Console.WriteLine(e.ToString()); }
 
 
         }
+
+       
 
         void Position(string fenOrStart, string[] splitCmd)
         {
@@ -122,10 +119,15 @@ namespace Chess.Interface
                 {
                     string fen = string.Join(" ", splitCmd, 2, splitCmd.Length - 2);
                     gmgr.Board = new Game.Board(fen);
+                    startingFromStartpos = false;
                 }
                 catch (Exception e) { Console.WriteLine(e.ToString()); }
             }
-            else gmgr.Board = new Game.Board();
+            else
+            {
+                gmgr.Board = new Game.Board();
+                startingFromStartpos = true;
+            }
             for (int i = 0; i < splitCmd.Length; i++)
             {
                 if (splitCmd[i] == "moves")

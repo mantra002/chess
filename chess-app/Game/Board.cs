@@ -271,7 +271,16 @@ namespace Chess.Game
             EnPassantTarget = move.AllowsEnPassantTarget;
             if (this.EnPassantTarget != Squares.None) ZobristHash ^= Game.ZobristHash.EpKeys[(byte)this.EnPassantTarget];
         }
+        public List<Move> GetPlayedMoves()
+        {
+            List<Move> playedMoves = new List<Move>();
+            foreach(GameState gs in GameHistory)
+            {
+                playedMoves.Add(gs.PlayedMove);
+            }
 
+            return playedMoves;
+        }
         public void UndoMove(Move move)
         {
             MoveCounter--;
@@ -399,7 +408,7 @@ namespace Chess.Game
                     else
                     {
 #if DEBUG
-                        Console.WriteLine("Adding " + c + " @ " + boardIndex);
+                        //Console.WriteLine("Adding " + c + " @ " + boardIndex);
 #endif
                         AddPiece(Pieces.EncodePieceFromChar(c), boardIndex++);
                     }

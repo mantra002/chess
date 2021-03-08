@@ -46,6 +46,7 @@ namespace Chess.Engine
                 if (child == null)
                 {
                     root.AddChildList(opening[0]);
+                    openingCount++;
                     child = root.GetChildList(opening[0]);
                 }
 
@@ -55,12 +56,15 @@ namespace Chess.Engine
                     if (child2 == null)
                     {
                         child.AddChildList(opening[i]);
+                        openingCount++;
                     }
                     child2 = child.GetChildList(opening[i]);
                     child = child2;
                 }    
             }
-
+#if DEBUG
+            Console.WriteLine(openingCount + " opening lines loaded into the openings book.");
+#endif
             return root;
         }
 
@@ -88,6 +92,9 @@ namespace Chess.Engine
         {
             openingMoves.Add(new OpeningBook<string>(childMove));
         }
-        
+        public override string ToString()
+        {
+            return this.move;
+        }
     }
 }

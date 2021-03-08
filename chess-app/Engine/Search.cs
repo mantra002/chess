@@ -19,24 +19,26 @@ namespace Chess.Engine
     {
         public short TargetDepth;
 
-        Board board;
+        private Board board;
         public int BestEval;
         public Move BestMove;
 
-        TranspositionTable tt;
+        public bool AbortSearch = false;
 
-        const int PositiveInfinity = 9999999;
-        const int NegativeInfinity = -PositiveInfinity;
+        private TranspositionTable tt;
+
+        private const int PositiveInfinity = 9999999;
+        private const int NegativeInfinity = -PositiveInfinity;
 
         public Move[] PrincipalVariation;
-        public List<Move> BookMoves;
+        public Move BookMove;
 
-        bool inBook = true;
-        Random r;
+        private bool inBook = true;
+        private Random r;
 
-        Move BestMoveSoFar;
-        int BestEvalSoFar;
-        int MateInPly;
+        private Move BestMoveSoFar;
+        private int BestEvalSoFar;
+        private int MateInPly;
 
         public int numNodes;
         public int numDeltaCutoffs;
@@ -47,8 +49,8 @@ namespace Chess.Engine
         public int nodesPerSecond;
 
         private Stopwatch sw = new Stopwatch();
-        SearchSettings SearchSetting;
-        OpeningBook<string> openingBook;
+        public SearchSettings SearchSetting;
+        private OpeningBook<string> openingBook;
 
         public Search(Board b, SearchSettings ss)
         {
@@ -58,8 +60,9 @@ namespace Chess.Engine
             tt = new TranspositionTable(ss.TranspositionTableSizeMb);
         }
 
-        public void StartSearch(short depth, Board b)
+        public void StartSearch(short depth, Board b, bool startingFromStartPos = false)
         {
+            AbortSearch = false;
             this.board = b;
             this.TargetDepth = depth;
             numTTHit = numCutoffCount = numNodes = 0;
@@ -67,23 +70,31 @@ namespace Chess.Engine
             BestEval = BestEvalSoFar = qDepth = 0;
             BestMove = BestMoveSoFar = null;
 
-            if (SearchSetting.UseOpeningBook)
+            inBook = startingFromStartPos;
+            BookMove = null;
+
+            if (SearchSetting.UseOpeningBook && inBook)
             {
-                BookMoves = new List<Move>();
-                if (this.board.ZobristHash == 9293682485474089328)
+                OpeningBook<string> childBook = openingBook;
+                List<Move> playedMoves = b.GetPlayedMoves();
+                for(int i = playedMoves.Count - 1; i >= 0; i--)
                 {
-                    List<string> options = openingBook.ListAllChildren();
-                    BookMoves.Add(new Move(options[r.Next(0, options.Count)], board));
-                    PrintSearchStats(1);
-                    board.PlayMove(BookMoves[0]);
+                    childBook = childBook.GetChildList(playedMoves[i].ToString());
+                    if (childBook == null)
+                    {
+                        inBook = false;
+                        break;
+                    }
+                }
+                if (inBook)
+                {
+                    List<string> options = childBook.ListAllChildren();
+                    string lastMove = options[r.Next(0, options.Count)];
+                    BookMove = new Move(lastMove, board);
+                    PrintSearchStats(0); //Passing a depth of zero because the book depth is handled in the print search method
+                    board.PlayMove(BookMove);
                     depth--;
                 }
-                else
-                {
-                    //for(int i)
-                }
-
-
             }
 
             sw.Start();
@@ -112,21 +123,17 @@ namespace Chess.Engine
                 PrintSearchStats(TargetDepth);
             }
             sw.Reset();
-            if (SearchSetting.UseOpeningBook && BookMoves.Count > 0)
-            {
-                for (int i = BookMoves.Count - 1; i < 0; i--)
-                {
-                    board.UndoMove(BookMoves[i]);
-                }
-            }
+            if(SearchSetting.UseOpeningBook && inBook) board.UndoMove(BookMove);
+
         }
 
         public void PrintSearchStats(int depth)
         {
             int realDepth = depth;
-            if (SearchSetting.UseOpeningBook && BookMoves.Count > 0)
+            if (AbortSearch) return;
+            if (SearchSetting.UseOpeningBook && BookMove != null)
             {
-                realDepth = BookMoves.Count + depth;
+                realDepth = 1 + depth;
             }
             StringBuilder sb = new StringBuilder();
 
@@ -149,12 +156,9 @@ namespace Chess.Engine
                 sb.Append(MateInPly * Math.Sign(BestEval));
             }
             sb.Append(" pv ");
-            if (SearchSetting.UseOpeningBook && BookMoves != null)
+            if (SearchSetting.UseOpeningBook && BookMove != null)
             {
-                for (int i = 0; i < BookMoves.Count; i++)
-                {
-                    sb.Append(BookMoves[i].ToString() + " ");
-                }
+                    sb.Append(BookMove.ToString() + " ");
             }
             if (PrincipalVariation != null)
             {
@@ -168,7 +172,7 @@ namespace Chess.Engine
         private int DoSearch(int depth, int plyFromRoot, int alpha, int beta)
         {
             int eval;
-         
+            if (AbortSearch) return 0;
             if (plyFromRoot > 0)
             {
                 alpha = Max(alpha, -Evaluation.MateValue + plyFromRoot);

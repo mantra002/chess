@@ -14,7 +14,6 @@ namespace Chess.Engine
         public static void OrderMoves(Board b, TranspositionTable tt, List<Move> moves, bool UseSEE = false)
         {
             int score;
-            Move ttMove = tt.LookupPosition(b.ZobristHash).MovePlayed;
 
             int thisPieceValue;
 
@@ -41,7 +40,6 @@ namespace Chess.Engine
                     score += Evaluation.GetPieceValue(m.PromoteIntoPiece);
                 }
 
-                if (ttMove != null && m.MoveHash == ttMove.MoveHash) score += 10000;
                 m.MoveScore = -score; //Sorting small = good
             }
 

@@ -111,11 +111,17 @@ namespace Chess.Engine
                 if (_inBook)
                 {
                     List<string> options = childBook.ListAllChildren();
-                    string lastMove = options[_random.Next(0, options.Count)];
-                    BookMove = new Move(lastMove, _board);
-                    PrintSearchStats(0); //Passing a depth of zero because the book depth is handled in the print search method
-                    _board.PlayMove(BookMove);
-                    depth--;
+
+                    if (options.Count != 0)
+                    {
+                        string lastMove = options[_random.Next(0, options.Count)];
+                        BookMove = new Move(lastMove, _board);
+                        PrintSearchStats(0); //Passing a depth of zero because the book depth is handled in the print search method
+                        Console.WriteLine("info string book move");
+                        _board.PlayMove(BookMove);
+                        depth--;
+                    }
+                    else _inBook = false;
                 }
             }
 
@@ -152,7 +158,7 @@ namespace Chess.Engine
             if (_usingTimeControl)
             {
                 _timeBank += (int)(_predictedTime - _stopWatch.ElapsedMilliseconds);
-                Console.WriteLine("info string banking: " + _timeBank + "ms");
+                Console.WriteLine($"info string banking: { _timeBank }ms");
             }
             if(SearchSetting.UseOpeningBook && _inBook) _board.UndoMove(BookMove);
             if (BookMove != null) BestMove = BookMove;
@@ -175,7 +181,7 @@ namespace Chess.Engine
                 Thread.Sleep(200);
             }
             this.AbortSearch = true;
-            Console.WriteLine("info string search aborted for time " + timeAllowed + " / " + _stopWatch.ElapsedMilliseconds);
+            Console.WriteLine($"info string search aborted for time {timeAllowed} / {_stopWatch.ElapsedMilliseconds}");
         }
         private long GetTimeAllowedForSearch()
         {
@@ -202,28 +208,20 @@ namespace Chess.Engine
                 realDepth = 1 + depth;
             }
             StringBuilder sb = new StringBuilder();
-
-            sb.Append("info depth ");
-            sb.Append(realDepth);
-            sb.Append(" seldepth ");
-            sb.Append(qDepth);
-            sb.Append(" nodes ");
-            sb.Append(numNodes);
-            sb.Append(" nps ");
-            sb.Append(nodesPerSecond);
-            sb.Append(" time ");
-            sb.Append(_stopWatch.ElapsedMilliseconds);
-            sb.Append(" hashfull ");
-            sb.Append((int)(_tt.PercentFull*1000));
+            sb.Append("info ");
+            sb.Append($"depth {realDepth} ");
+            sb.Append($"seldepth {qDepth} ");
+            sb.Append($"nodes {numNodes} ");
+            sb.Append($"nps {nodesPerSecond} ");
+            sb.Append($"time {_stopWatch.ElapsedMilliseconds} ");
+            sb.Append($"hashfull {(int)(_tt.PercentFull * 1000)} ");
             if (_mateInPly == -1)
             {
-                sb.Append(" score cp ");
-                sb.Append(BestEval);
+                sb.Append($"score cp {BestEval} ");
             }
             else
             {
-                sb.Append(" score mate ");
-                sb.Append(_mateInPly * Math.Sign(BestEval));
+                sb.Append($"score mate {_mateInPly * Math.Sign(BestEval)} ");
             }
             sb.Append(" pv ");
             if (SearchSetting.UseOpeningBook && BookMove != null)
@@ -238,6 +236,10 @@ namespace Chess.Engine
                 }
             }
             Console.WriteLine(sb.ToString());
+        }
+        public void ClearTT()
+        {
+            this._tt.ClearTable();
         }
         private int DoSearch(int depth, int plyFromRoot, int alpha, int beta)
         {
@@ -254,15 +256,15 @@ namespace Chess.Engine
                 }
             }
 
-            int ttLookupScore = _tt.LookupScore(_board.ZobristHash, depth, plyFromRoot, alpha, beta);
-            if (ttLookupScore != int.MinValue)
+            TranspositionTable.Position p = _tt.LookupPosition(_board.ZobristHash);
+            int ttLookupScore;
+            if (p != null && (ttLookupScore = p.GetScore(depth, alpha, beta)) != _negativeInfinity)
             {
                 numTTHit++;
                 if (plyFromRoot == 0)
                 {
-                    TranspositionTable.Position p = _tt.LookupPosition(_board.ZobristHash);
                     _bestMoveSoFar = p.MovePlayed;
-                    _bestEvalSoFar = p.Score;
+                    _bestEvalSoFar = ttLookupScore;
                     PrincipalVariation[plyFromRoot] = p.MovePlayed;
                 }
                 return ttLookupScore;
@@ -325,12 +327,17 @@ namespace Chess.Engine
                         }
                     }
                 }
-            _tt.AddPosition(_board.ZobristHash, beta, _bestMoveSoFar, (byte)depth, nodeType);
+            _tt.AddPosition(_board.ZobristHash, alpha, _bestMoveSoFar, (byte)depth, nodeType);
             return alpha;
 
         }
-
-        public int GetMateInNMoves()
+        public static bool ScoreNearCheckmate(int score)
+        {
+            int absScore = Math.Abs(score);
+            if (score > Evaluation.MateValue - 1000) return true;
+            return false;
+        }
+        private int GetMateInNMoves()
         {
             int mateInPly = -1;
             if (Math.Abs(BestEval) > Evaluation.MateValue - 1000)

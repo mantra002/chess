@@ -32,6 +32,9 @@ namespace Chess.Interface
                     bool performSearch = true;
                     switch (mainCommand)
                     {
+                        case "cleartt":
+                            gmgr.AbSearch.ClearTT();
+                            break;
                         case "uci":
                             SendOptions();
                             break;

@@ -22,7 +22,7 @@ namespace Chess.Engine
 
         public const int CaptureBonusMultiplier = 5;
 
-        public const int SeeCutoff = 200;
+        public const int SeeCutoff = 100;
 
         const int BishopPairValue = 50;
         const int KnightPawnBonus = 6; // per pawn > 5 pawns

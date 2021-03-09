@@ -23,22 +23,26 @@ namespace Chess.Management
         {
         }
 
-        public void PerformSearch(short depth, bool startingFromStartpos = false)
+        public void PerformSearch(bool startingFromStartpos = false)
         {
             this.AbortSearch();
-            search = new Thread(() => AbSearch.StartSearch(depth, this.Board, startingFromStartpos));
+            search = new Thread(() => AbSearch.StartSearch(this.Board, SearchSet,  startingFromStartpos));
             search.IsBackground = true;
             search.Start();
         }
         public void AbortSearch()
         {
             AbSearch.AbortSearch = true;
+            WaitForSearch();
+        }
+        public void WaitForSearch()
+        {
             if (search != null) search.Join();
         }
         public GameManager(Board b)
         {
             Board = b;
-            AbSearch = new Search(Board, SearchSet);
+            AbSearch = new Search(Board, this.SearchSet);
             r = new Random();
         }
         public void GenerateAndPlayRandomMove()

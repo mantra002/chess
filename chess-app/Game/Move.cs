@@ -104,7 +104,7 @@ namespace Chess.Game
 
 
             SideToMove = b.ColorToMove;
-            if (Destination == (byte)b.EnPassantTarget)
+            if (((Piece & (byte)PieceNames.Pawn) != 0) && Destination == (byte)b.EnPassantTarget && Board.GetFile(Origin) != Board.GetFile(Destination))
             {
                 PieceListIndex = b.PieceList.IndexOf(Board.EncodePieceForPieceList(PieceCaptured, Destination));
                 CaptureEnPassant = true;

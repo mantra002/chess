@@ -118,6 +118,11 @@ namespace Chess.Engine
                         BookMove = new Move(lastMove, _board);
                         PrintSearchStats(0); //Passing a depth of zero because the book depth is handled in the print search method
                         Console.WriteLine("info string book move");
+                        if(_usingTimeControl)
+                        {
+                            Console.Write("bestmove " + BookMove.ToString());
+                            return;
+                        }
                         _board.PlayMove(BookMove);
                         depth--;
                     }
@@ -150,7 +155,7 @@ namespace Chess.Engine
                 DoSearch(depth, 0, _negativeInfinity, _positiveInfinity);
                 BestMove = _bestMoveSoFar;
                 BestEval = _bestEvalSoFar;
-                nodesPerSecond = (int)(numNodes / (_stopWatch.ElapsedMilliseconds / 1000.0));
+                nodesPerSecond = Math.Max(0,(int)(numNodes / (_stopWatch.ElapsedMilliseconds / 1000.0)));
                 _mateInPly = GetMateInNMoves();
                 PrintSearchStats(SearchSetting.Depth);
             }
@@ -214,7 +219,7 @@ namespace Chess.Engine
             sb.Append($"nodes {numNodes} ");
             sb.Append($"nps {nodesPerSecond} ");
             sb.Append($"time {_stopWatch.ElapsedMilliseconds} ");
-            sb.Append($"hashfull {(int)(_tt.PercentFull * 1000)} ");
+            sb.Append($"hashfull {Math.Min(1000,(int)(_tt.PercentFull * 1000))} ");
             if (_mateInPly == -1)
             {
                 sb.Append($"score cp {BestEval} ");
@@ -241,33 +246,44 @@ namespace Chess.Engine
         {
             this._tt.ClearTable();
         }
-        private int DoSearch(int depth, int plyFromRoot, int alpha, int beta)
+        private int DoSearch(int depth, byte plyFromRoot, int alpha, int beta)
         {
             int eval;
             if (AbortSearch) return 0;
-            if (plyFromRoot > 0)
-            {
-                alpha = Max(alpha, -Evaluation.MateValue + plyFromRoot);
-                beta = Min(beta, Evaluation.MateValue - plyFromRoot);
-                if (alpha >= beta)
-                {
-                    //Mate has been found
-                    return alpha;
-                }
-            }
 
             TranspositionTable.Position p = _tt.LookupPosition(_board.ZobristHash);
-            int ttLookupScore;
-            if (p != null && (ttLookupScore = p.GetScore(depth, alpha, beta)) != _negativeInfinity)
+            if (p != null && p.HashKey == _board.ZobristHash)
             {
-                numTTHit++;
-                if (plyFromRoot == 0)
+                if (p.Depth >= depth)
                 {
-                    _bestMoveSoFar = p.MovePlayed;
-                    _bestEvalSoFar = ttLookupScore;
-                    PrincipalVariation[plyFromRoot] = p.MovePlayed;
+                    //Can use the move in the hash here to order earlier later on.
+                    numTTHit++;
+                    int ttLookupScore = p.GetScore(plyFromRoot);
+                    switch (p.NType)
+                    {
+                        case TranspositionTable.NodeType.Exact:
+
+                            if (plyFromRoot == 0)
+                            {
+                                _bestMoveSoFar = p.MovePlayed;
+                                _bestEvalSoFar = p.Score;
+                                PrincipalVariation[plyFromRoot] = _bestMoveSoFar;
+                            }
+                            return p.Score;
+                        case TranspositionTable.NodeType.Beta:
+                            if (p.Score >= alpha) alpha = p.Score;
+                            break;
+                        case TranspositionTable.NodeType.Alpha:
+                            if (p.Score <= beta) beta = p.Score;
+                            break;
+                        default:
+                            throw new Exception("Invalid transposition position node type.");
+                    }
+                    if (alpha >= beta)
+                    {
+                        return p.Score;
+                    }
                 }
-                return ttLookupScore;
             }
 
             if (depth == 0)
@@ -293,22 +309,22 @@ namespace Chess.Engine
                 }
             }
 
-            TranspositionTable.NodeType nodeType = TranspositionTable.NodeType.UpperBound;
+            TranspositionTable.NodeType nodeType = TranspositionTable.NodeType.Alpha;
 
             Move bestMoveInThisPosition = null;
 
             for (int i = 0; i < moves.Count; i++)
             {
                     _board.PlayMove(moves[i]);
-                    eval = -DoSearch(depth - 1, plyFromRoot + 1, -(alpha + 1), -alpha);
-                    if (alpha < eval && eval < beta) eval = -DoSearch(depth - 1, plyFromRoot + 1, -beta, -alpha);
+                    eval = -DoSearch(depth - 1, (byte)(plyFromRoot + 1), -(alpha + 1), -alpha);
+                    if (alpha < eval && eval < beta) eval = -DoSearch(depth - 1, (byte)(plyFromRoot + 1), -beta, -alpha);
                     _board.UndoMove(moves[i]);
                     numNodes++;
 
                     // Beta cutoff
                     if (eval >= beta)
                     {
-                        _tt.AddPosition(_board.ZobristHash, beta, moves[i], (byte)depth, TranspositionTable.NodeType.LowerBound);
+                        _tt.AddPosition(_board.ZobristHash, beta, moves[i], (byte)depth, (byte)plyFromRoot, TranspositionTable.NodeType.Beta);
                         numCutoffCount++;
                         return beta;
                     }
@@ -327,7 +343,7 @@ namespace Chess.Engine
                         }
                     }
                 }
-            _tt.AddPosition(_board.ZobristHash, alpha, _bestMoveSoFar, (byte)depth, nodeType);
+            _tt.AddPosition(_board.ZobristHash, alpha, bestMoveInThisPosition, (byte)depth, (byte)plyFromRoot, nodeType);
             return alpha;
 
         }

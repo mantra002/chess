@@ -47,84 +47,65 @@ namespace Chess.Engine
                 return p; }
             return null;
         }
-        public void AddPosition(ulong key, int score, Move movePlayed, byte depth, NodeType nt)
+        public void AddPosition(ulong key, int score, Move movePlayed, byte depth, byte plyFromRoot, NodeType nt)
         {
             //Console.WriteLine($"Saving position with key {key} at index {GetTTIndex(key)}");
-            Position p = new Position(key, score, movePlayed, depth, nt);
+            Position p = new Position(key, score, movePlayed, depth, plyFromRoot, nt);
             tt[GetTTIndex(key)] = p;
             TtEntries++;
         }
-        private static int AdjustedScoreIntoTT(int score, int depth)
+        private static int AdjustedScoreIntoTT(int score, int plyFromRoot)
         {
             if(Search.ScoreNearCheckmate(score))
             {
-                if (score > 0) return score + depth;
-                else return score - depth;
+                if (score > 0) return score + plyFromRoot;
+                else return score - plyFromRoot;
             }
             return score;
         }
-        private static int AdjustedScoreOutOfTT(int score, int depth)
+        private static int AdjustedScoreOutOfTT(int score, int plyFromRoot)
         {
             if (Search.ScoreNearCheckmate(score))
             {
-                if (score > 0) return score - depth;
-                else return score + depth;
+                if (score > 0) return score - plyFromRoot;
+                else return score + plyFromRoot;
             }
             return score;
         }
         public enum NodeType
         {
             Exact,
-            LowerBound,
-            UpperBound
+            Beta,
+            Alpha
         }
+    
         [StructLayout(LayoutKind.Sequential)]
         public class Position
         {
-            private int _score;
             public readonly ulong HashKey;
-            public int Score { 
-                get { return AdjustedScoreOutOfTT(_score, this.Depth); }
-                set { _score = AdjustedScoreIntoTT(value, this.Depth); }
-          
-           }
+            public int Score;
             public readonly Move MovePlayed;
             public readonly byte Depth;
             public readonly NodeType NType;
 
 
-            public Position(ulong hk, int score, Move movePlayed, byte depth, NodeType nt)
+            public Position(ulong hk, int score, Move movePlayed, byte depth, byte plyFromRoot, NodeType nt)
             {
                 this.HashKey = hk;
                 this.MovePlayed = movePlayed;
                 this.Depth = depth;
                 this.NType = nt;
-                this.Score = score;
+                this.Score = AdjustedScoreIntoTT(score, plyFromRoot);
             }
             public static int GetSize()
             {
                 return System.Runtime.InteropServices.Marshal.SizeOf<Position>();
             }
-            public int GetScore(int depth, int alpha, int beta)
-            {
-                if (this.Depth >= depth)
-                {
-                    //Console.WriteLine("*****************Found it!");
-                    switch (this.NType)
-                    {
-                        case NodeType.Exact:
-                            return this.Score;
-                        case NodeType.LowerBound:
-                            if (this.Score >= beta) return this.Score;
-                            break;
-                        case NodeType.UpperBound:
-                            if (this.Score <= alpha) return this.Score;
-                            break;
-                    }
-                }
-                return -9999999;
-            }
 
+            public int GetScore(byte plyFromRoot)
+            {
+                return AdjustedScoreOutOfTT(this.Score, plyFromRoot);
+            }
         }
     }
 

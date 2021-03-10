@@ -120,7 +120,7 @@ namespace Chess.Engine
                         Console.WriteLine("info string book move");
                         if(_usingTimeControl)
                         {
-                            Console.Write("bestmove " + BookMove.ToString());
+                            Console.WriteLine("bestmove " + BookMove.ToString());
                             return;
                         }
                         _board.PlayMove(BookMove);

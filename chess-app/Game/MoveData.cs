@@ -10,40 +10,40 @@ namespace Chess.Game
     {
         //Need a way to generate the index offsets for pieces
 
-        public readonly static FakeMoveDirections[] FPawnMovesWhite = { FakeMoveDirections.Up };
-        public readonly static FakeMoveDirections[] FPawnMovesBlack = { FakeMoveDirections.Down };
-        public readonly static FakeMoveDirections[] FPawnAttacksWhite = { FakeMoveDirections.UpLeft, FakeMoveDirections.UpRight };
-        public readonly static FakeMoveDirections[] FPawnAttacksBlack = { FakeMoveDirections.DownLeft, FakeMoveDirections.DownRight };
-        public readonly static FakeMoveDirections[] FKnightMoves = { FakeMoveDirections.DownLeft2, FakeMoveDirections.DownRight2, FakeMoveDirections.TwoDownLeft, FakeMoveDirections.TwoDownRight, FakeMoveDirections.UpLeft2, FakeMoveDirections.UpRight2, FakeMoveDirections.TwoUpLeft, FakeMoveDirections.TwoUpRight };
-        public readonly static FakeMoveDirections[] FBishopMoves = { FakeMoveDirections.UpLeft, FakeMoveDirections.UpRight, FakeMoveDirections.DownLeft, FakeMoveDirections.DownRight };
-        public readonly static FakeMoveDirections[] FRookMoves = { FakeMoveDirections.Up, FakeMoveDirections.Down, FakeMoveDirections.Left, FakeMoveDirections.Right };
-        public readonly static FakeMoveDirections[] FKingMoves = { FakeMoveDirections.UpLeft, FakeMoveDirections.UpRight, FakeMoveDirections.DownLeft, FakeMoveDirections.DownRight, FakeMoveDirections.Up, FakeMoveDirections.Down, FakeMoveDirections.Left, FakeMoveDirections.Right };
-        public readonly static FakeMoveDirections[] FQueenMoves = FKingMoves;
+        internal readonly static FakeMoveDirections[] FPawnMovesWhite = { FakeMoveDirections.Up };
+        internal readonly static FakeMoveDirections[] FPawnMovesBlack = { FakeMoveDirections.Down };
+        internal readonly static FakeMoveDirections[] FPawnAttacksWhite = { FakeMoveDirections.UpLeft, FakeMoveDirections.UpRight };
+        internal readonly static FakeMoveDirections[] FPawnAttacksBlack = { FakeMoveDirections.DownLeft, FakeMoveDirections.DownRight };
+        internal readonly static FakeMoveDirections[] FKnightMoves = { FakeMoveDirections.DownLeft2, FakeMoveDirections.DownRight2, FakeMoveDirections.TwoDownLeft, FakeMoveDirections.TwoDownRight, FakeMoveDirections.UpLeft2, FakeMoveDirections.UpRight2, FakeMoveDirections.TwoUpLeft, FakeMoveDirections.TwoUpRight };
+        internal readonly static FakeMoveDirections[] FBishopMoves = { FakeMoveDirections.UpLeft, FakeMoveDirections.UpRight, FakeMoveDirections.DownLeft, FakeMoveDirections.DownRight };
+        internal readonly static FakeMoveDirections[] FRookMoves = { FakeMoveDirections.Up, FakeMoveDirections.Down, FakeMoveDirections.Left, FakeMoveDirections.Right };
+        internal readonly static FakeMoveDirections[] FKingMoves = { FakeMoveDirections.UpLeft, FakeMoveDirections.UpRight, FakeMoveDirections.DownLeft, FakeMoveDirections.DownRight, FakeMoveDirections.Up, FakeMoveDirections.Down, FakeMoveDirections.Left, FakeMoveDirections.Right };
+        internal readonly static FakeMoveDirections[] FQueenMoves = FKingMoves;
 
-        public readonly static MoveDirections[] PawnMovesWhite = { MoveDirections.Up };
-        public readonly static MoveDirections[] PawnMovesBlack = { MoveDirections.Down };
-        public readonly static MoveDirections[] PawnAttacksWhite = { MoveDirections.UpLeft, MoveDirections.UpRight };
-        public readonly static MoveDirections[] PawnAttacksBlack = { MoveDirections.DownLeft, MoveDirections.DownRight };
-        public readonly static MoveDirections[] KnightMoves = { MoveDirections.DownLeft2, MoveDirections.DownRight2, MoveDirections.TwoDownLeft, MoveDirections.TwoDownRight, MoveDirections.UpLeft2, MoveDirections.UpRight2, MoveDirections.TwoUpLeft, MoveDirections.TwoUpRight };
-        public readonly static MoveDirections[] BishopMoves = { MoveDirections.UpLeft, MoveDirections.UpRight, MoveDirections.DownLeft, MoveDirections.DownRight };
-        public readonly static MoveDirections[] RookMoves = { MoveDirections.Up, MoveDirections.Down, MoveDirections.Left, MoveDirections.Right };
-        public readonly static MoveDirections[] KingMoves = { MoveDirections.UpLeft, MoveDirections.UpRight, MoveDirections.DownLeft, MoveDirections.DownRight, MoveDirections.Up, MoveDirections.Down, MoveDirections.Left, MoveDirections.Right };
-        public readonly static MoveDirections[] QueenMoves = KingMoves;
-        public readonly static bool[] ValidBoardPositions;
+        internal readonly static MoveDirections[] PawnMovesWhite = { MoveDirections.Up };
+        internal readonly static MoveDirections[] PawnMovesBlack = { MoveDirections.Down };
+        internal readonly static MoveDirections[] PawnAttacksWhite = { MoveDirections.UpLeft, MoveDirections.UpRight };
+        internal readonly static MoveDirections[] PawnAttacksBlack = { MoveDirections.DownLeft, MoveDirections.DownRight };
+        internal readonly static MoveDirections[] KnightMoves = { MoveDirections.DownLeft2, MoveDirections.DownRight2, MoveDirections.TwoDownLeft, MoveDirections.TwoDownRight, MoveDirections.UpLeft2, MoveDirections.UpRight2, MoveDirections.TwoUpLeft, MoveDirections.TwoUpRight };
+        internal readonly static MoveDirections[] BishopMoves = { MoveDirections.UpLeft, MoveDirections.UpRight, MoveDirections.DownLeft, MoveDirections.DownRight };
+        internal readonly static MoveDirections[] RookMoves = { MoveDirections.Up, MoveDirections.Down, MoveDirections.Left, MoveDirections.Right };
+        internal readonly static MoveDirections[] KingMoves = { MoveDirections.UpLeft, MoveDirections.UpRight, MoveDirections.DownLeft, MoveDirections.DownRight, MoveDirections.Up, MoveDirections.Down, MoveDirections.Left, MoveDirections.Right };
+        internal readonly static MoveDirections[] QueenMoves = KingMoves;
+        internal readonly static bool[] ValidBoardPositions;
 
-        public readonly static short[][] AvailiblePawnMovesWhite;
-        public readonly static short[][] AvailiblePawnMovesBlack;
-        public readonly static short[][] AvailiblePawnAttacksWhite;
-        public readonly static short[][] AvailiblePawnAttacksBlack;
-        public readonly static short[][] AvailibleBishopMoves;
-        public readonly static short[][] AvailibleRookMoves;
-        public readonly static short[][] AvailibleKnightMoves;
-        public readonly static short[][] AvailibleKingMoves;
-        public readonly static short[][] AvailibleQueenMoves;
+        internal readonly static short[][] AvailiblePawnMovesWhite;
+        internal readonly static short[][] AvailiblePawnMovesBlack;
+        internal readonly static short[][] AvailiblePawnAttacksWhite;
+        internal readonly static short[][] AvailiblePawnAttacksBlack;
+        internal readonly static short[][] AvailibleBishopMoves;
+        internal readonly static short[][] AvailibleRookMoves;
+        internal readonly static short[][] AvailibleKnightMoves;
+        internal readonly static short[][] AvailibleKingMoves;
+        internal readonly static short[][] AvailibleQueenMoves;
 
-        public readonly static byte[][] DistanceToEdge;
+        internal readonly static byte[][] DistanceToEdge;
 
-        public enum FakeMoveDirections : short
+        internal enum FakeMoveDirections : short
         {
             Up = -14,
             Down = 14,
@@ -63,7 +63,7 @@ namespace Chess.Game
             DownLeft2 = Down + Left + Left
         }
 
-        public enum MoveDirections : short
+        internal enum MoveDirections : short
         {
             Up = -8,
             Down = 8,
@@ -82,7 +82,7 @@ namespace Chess.Game
             DownRight2 = Down + Right + Right,
             DownLeft2 = Down + Left + Left
         }
-        public enum MoveDirectionsIndex : short
+        internal enum MoveDirectionsIndex : short
         {
             Up,
             Down,
@@ -152,9 +152,9 @@ namespace Chess.Game
         }
         static void GenerateValidBoardPositions()
         {
-            for(short i = 0; i < 14; i++)
+            for (short i = 0; i < 14; i++)
             {
-                for(short j = 0; j < 14; j++)
+                for (short j = 0; j < 14; j++)
                 {
                     if (i < 3 || i > 10 || j < 3 || j > 10)
                     {
@@ -162,17 +162,17 @@ namespace Chess.Game
                     }
                     else ValidBoardPositions[i * 14 + j] = true;
                 }
-               
+
             }
         }
 
-        public static short ConvertDummyBoardToRealSquare(short dummyBoardIndex)
+        internal static short ConvertDummyBoardToRealSquare(short dummyBoardIndex)
         {
-            short rank = (short) ((dummyBoardIndex / 14) - 3);
-            return (short)(dummyBoardIndex - 45 - 6*rank);
+            short rank = (short)((dummyBoardIndex / 14) - 3);
+            return (short)(dummyBoardIndex - 45 - 6 * rank);
         }
 
-        public static short ConvertRealSquareToDummyBoard(short realBoardIndex)
+        internal static short ConvertRealSquareToDummyBoard(short realBoardIndex)
         {
             return (short)(realBoardIndex + 45 + (6 * (realBoardIndex / 8)));
         }
@@ -182,11 +182,11 @@ namespace Chess.Game
             square = ConvertRealSquareToDummyBoard(square);
             List<short> availibleMoves = new List<short>();
             short resultDummySquare;
-            foreach(FakeMoveDirections moveOffset in moves)
+            foreach (FakeMoveDirections moveOffset in moves)
             {
                 resultDummySquare = (short)(square + (short)moveOffset);
 
-                if(ValidBoardPositions[resultDummySquare])
+                if (ValidBoardPositions[resultDummySquare])
                 {
                     availibleMoves.Add(ConvertDummyBoardToRealSquare(resultDummySquare));
                 }
@@ -194,21 +194,21 @@ namespace Chess.Game
             return availibleMoves.ToArray();
         }
 
-        public static short[] GenerateSlidingMoves(FakeMoveDirections[] moves, short square, Board b = null, short considerSquaresEmpty1 = -1, short considerSquaresEmpty2 = -1)
+        internal static short[] GenerateSlidingMoves(FakeMoveDirections[] moves, short square, Board b = null, short considerSquaresEmpty1 = -1, short considerSquaresEmpty2 = -1)
         {
             square = ConvertRealSquareToDummyBoard(square);
             List<short> availibleMoves = new List<short>();
             short resultDummySquare;
             short destinationPiece;
-            short realSquare=0;
+            short realSquare = 0;
 
             foreach (FakeMoveDirections moveOffset in moves)
             {
                 resultDummySquare = (short)(square + (short)moveOffset);
                 while (ValidBoardPositions[resultDummySquare])
-                { 
+                {
                     realSquare = ConvertDummyBoardToRealSquare(resultDummySquare);
-                    if(b != null)
+                    if (b != null)
                     {
                         destinationPiece = b.GameBoard[realSquare];
                         availibleMoves.Add(realSquare);
@@ -222,6 +222,56 @@ namespace Chess.Game
                 }
             }
             return availibleMoves.ToArray();
+        }
+        internal static short[] GenerateSlidingMoves(MoveDirections[] moves, short square, Board b = null, short considerSquaresEmpty1 = -1, short considerSquaresEmpty2 = -1)
+        {
+            List<short> availibleMoves = new List<short>();
+            short destinationPiece;
+            short traverseSquare = square;
+
+            foreach (MoveDirections moveOffset in moves)
+            {
+                traverseSquare = (short)(square + (short)moveOffset);
+                for (int i = 0; i < DistanceToEdge[square][(int)GetMDI(moveOffset)]; i++) ;
+                if (b != null)
+                {
+                    destinationPiece = b.GameBoard[traverseSquare];
+                    availibleMoves.Add(traverseSquare);
+                    if (destinationPiece != 0 && (traverseSquare != considerSquaresEmpty1 && traverseSquare != considerSquaresEmpty2)) break;
+                }
+                else
+                {
+                    availibleMoves.Add(traverseSquare);
+                }
+                traverseSquare = (short)(traverseSquare + (short)moveOffset);
+            }
+
+            return availibleMoves.ToArray();
+        }
+
+        internal static MoveDirectionsIndex GetMDI(MoveDirections md)
+        {
+            switch (md)
+            {
+                case MoveDirections.Up:
+                    return MoveDirectionsIndex.Up;
+                case MoveDirections.Down:
+                    return MoveDirectionsIndex.Down;
+                case MoveDirections.UpLeft:
+                    return MoveDirectionsIndex.UpLeft;
+                case MoveDirections.UpRight:
+                    return MoveDirectionsIndex.UpRight;
+                case MoveDirections.DownRight:
+                    return MoveDirectionsIndex.DownRight;
+                case MoveDirections.DownLeft:
+                    return MoveDirectionsIndex.DownLeft;
+                case MoveDirections.Left:
+                    return MoveDirectionsIndex.Left;
+                case MoveDirections.Right:
+                    return MoveDirectionsIndex.Right;
+                default:
+                    throw new Exception("Getting move index for invalid direction.");
+            }
         }
     }
 }

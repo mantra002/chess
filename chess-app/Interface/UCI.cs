@@ -7,12 +7,12 @@ using System.Threading.Tasks;
 
 namespace Chess.Interface
 {
-    public class UCI
+    internal class UCI
     {
         private Management.GameManager gmgr;
         bool startingFromStartpos = true;
 
-        public void StartCommandLoop()
+        internal void StartCommandLoop()
         {
             gmgr = new Management.GameManager();
             new Thread(() => CommandLoop()).Start();

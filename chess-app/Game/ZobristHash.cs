@@ -8,10 +8,10 @@ namespace Chess.Game
 {
     static class ZobristHash
     {
-        public readonly static ulong[][][] PieceKeys;
-        public readonly static ulong[] CastleKeys;
-        public readonly static ulong[] EpKeys;
-        public readonly static ulong BlackToPlay;
+        internal readonly static ulong[][][] PieceKeys;
+        internal readonly static ulong[] CastleKeys;
+        internal readonly static ulong[] EpKeys;
+        internal readonly static ulong BlackToPlay;
 
         static ZobristHash()
         {

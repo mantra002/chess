@@ -7,34 +7,36 @@ using System.Threading.Tasks;
 namespace Chess.Game
 {
     using static Enums;
-    public class Board : ICloneable
+    public sealed class Board
     {
 
         public byte[] GameBoard = new byte[64];
         public Colors ColorToMove = Colors.White;
         public byte CastleMask = 0b0000; //White Short - White Long - Black Short - Black Long
         public Squares EnPassantTarget = Squares.None;
-        private Squares EnPassantTargetTimeZero = Squares.None;
+        private Squares _enPassantTargetTimeZero = Squares.None;
         public bool InCheck = false;
         public bool CheckMate = false;
+
         public List<ushort> PieceList = new List<ushort>(); //Formmatted as 0bLLLLLLLLPPPPPPCC L = Location; P = Piece; C = Color
-        public Stack<GameState> GameHistory = new Stack<GameState>();
-        public List<ushort>[][] AttackedSquares = new List<ushort>[2][];
-        public List<ushort>[][] AttackedSquaresWithoutPins = new List<ushort>[2][];
+
+        internal Stack<GameState> GameHistory = new Stack<GameState>();
+        internal List<ushort>[][] AttackedSquares = new List<ushort>[2][];
+        internal List<ushort>[][] AttackedSquaresWithoutPins = new List<ushort>[2][];
         public byte[] KingSquares = new byte[2];
         public ulong ZobristHash;
 
-        public short MoveCounter = 0;
-        public byte FiftyMoveCounter = 0; //In Ply
+        internal short MoveCounter = 0;
+        internal byte FiftyMoveCounter = 0; //In Ply
 
-        public struct GameState
+        internal struct GameState
         {
-            public List<ushort>[][] AttackedSquares;
-            public List<ushort>[][] AttackedSquaresWithoutPins;
-            public Move PlayedMove;
-            public byte CastleMask;
+            internal List<ushort>[][] AttackedSquares;
+            internal List<ushort>[][] AttackedSquaresWithoutPins;
+            internal Move PlayedMove;
+            internal byte CastleMask;
 
-            public GameState(List<ushort>[][] atksq, List<ushort>[][] aswp, Move m, byte cm)
+            internal GameState(List<ushort>[][] atksq, List<ushort>[][] aswp, Move m, byte cm)
             {
                 this.AttackedSquares = atksq;
                 this.AttackedSquaresWithoutPins = aswp;
@@ -49,13 +51,13 @@ namespace Chess.Game
             NewBoard(fen);
         }
 
-        public void AddPiece(byte piece, byte location)
+        internal void AddPiece(byte piece, byte location)
         {
             GameBoard[location] = piece;
             if (piece != 0) PieceList.Add(EncodePieceForPieceList(piece, location));
             ZobristPiece(piece, location);
         }
-        public void RemovePiece(byte piece, byte location, int index = -1)
+        internal void RemovePiece(byte piece, byte location, int index = -1)
         {
             //This method doesn't work because the piece list is being changed with every remove or add.
             //if(index != -1) PieceList.RemoveAt(index);
@@ -125,7 +127,7 @@ namespace Chess.Game
             }
         }
 
-        public void PlayMove(Move move)
+        internal void PlayMove(Move move)
         {
             if (CheckMate) return;
             GameHistory.Push(new GameState(this.AttackedSquares, this.AttackedSquaresWithoutPins, move, this.CastleMask));
@@ -271,7 +273,7 @@ namespace Chess.Game
             EnPassantTarget = move.AllowsEnPassantTarget;
             if (this.EnPassantTarget != Squares.None) ZobristHash ^= Game.ZobristHash.EpKeys[(byte)this.EnPassantTarget];
         }
-        public List<Move> GetPlayedMoves()
+        internal List<Move> GetPlayedMoves()
         {
             List<Move> playedMoves = new List<Move>();
             foreach(GameState gs in GameHistory)
@@ -281,7 +283,7 @@ namespace Chess.Game
 
             return playedMoves;
         }
-        public void UndoMove(Move move)
+        internal void UndoMove(Move move)
         {
             MoveCounter--;
             if (CheckMate) CheckMate = false;
@@ -376,9 +378,11 @@ namespace Chess.Game
                 ColorToMove = Colors.White;
             }
             GameState gs = GameHistory.Pop();
+            AttackedSquares = gs.AttackedSquares;
+            AttackedSquaresWithoutPins = gs.AttackedSquaresWithoutPins;
             if (GameHistory.Count == 0)
             {
-                EnPassantTarget = EnPassantTargetTimeZero;
+                EnPassantTarget = _enPassantTargetTimeZero;
 
             }
             else EnPassantTarget = gs.PlayedMove.AllowsEnPassantTarget;
@@ -443,7 +447,7 @@ namespace Chess.Game
             if (splitFen[3].Trim() != "-")
             {
                 EnPassantTarget = (Squares)Enum.Parse(typeof(Squares), splitFen[3].Trim(), true);
-                EnPassantTargetTimeZero = EnPassantTarget;
+                _enPassantTargetTimeZero = EnPassantTarget;
             }
 
             //50 Move Timer
@@ -545,7 +549,7 @@ namespace Chess.Game
 
             return fen.ToString();
         }
-        public void NewBoard(string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+        internal void NewBoard(string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
         {
             LoadFEN(fen);
         }
@@ -584,7 +588,7 @@ namespace Chess.Game
             return sb.ToString();
         }
 
-        public static string BoardIndexToString(byte index)
+        internal static string BoardIndexToString(byte index)
         {
             char rank, file;
             int offset;
@@ -598,35 +602,29 @@ namespace Chess.Game
             return String.Concat(file, rank);
         }
 
-        public static byte GetRank(byte index)
+        internal static byte GetRank(byte index)
         {
             return (byte)(8 - (index / 8));
         }
 
-        public static byte GetFile(byte index)
+        internal static byte GetFile(byte index)
         {
             return (byte)(index % 8 + 1);
         }
 
-        public static ushort EncodePieceForPieceList(byte piece, byte location)
+        internal static ushort EncodePieceForPieceList(byte piece, byte location)
         {
             return (ushort)(((ushort)location << 8) | piece);
         }
 
-        public static byte DecodeLocationFromPieceList(ushort plPiece)
+        internal static byte DecodeLocationFromPieceList(ushort plPiece)
         {
             return (byte)(plPiece >> 8);
         }
 
-        public static byte DecodePieceFromPieceList(ushort plPiece)
+        internal static byte DecodePieceFromPieceList(ushort plPiece)
         {
             return (byte)(plPiece & 0b000000011111111);
-        }
-
-        public object Clone()
-        {
-            Board temp = new Board(this.ToFEN());
-            return temp;
         }
     }
 }

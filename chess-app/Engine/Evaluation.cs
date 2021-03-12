@@ -9,26 +9,26 @@ namespace Chess.Engine
     using Chess.Game;
     using static Chess.Game.Enums;
 
-    static public class Evaluation
+    static internal class Evaluation
 
     {
-        public const int MateValue = 100000;
-        public const int PawnValue = 100;
-        public const int BishopValue = 325;
-        public const int KnightValue = 325;
-        public const int RookValue = 500;
-        public const int QueenValue = 975;
-        public const int KingValue = 20000;
+        internal const int MateValue = 100000;
+        internal const int PawnValue = 100;
+        internal const int BishopValue = 325;
+        internal const int KnightValue = 325;
+        internal const int RookValue = 500;
+        internal const int QueenValue = 975;
+        internal const int KingValue = 20000;
 
-        public const int CaptureBonusMultiplier = 5;
+        internal const int CaptureBonusMultiplier = 5;
 
-        public const int SeeCutoff = 100;
+        internal const int SeeCutoff = 100;
 
         const int BishopPairValue = 50;
         const int KnightPawnBonus = 6; // per pawn > 5 pawns
         const int RookPawnPenalty = -12; // per pawn > 5 pawns
 
-        static public int Evaluate(Board b)
+        static internal int Evaluate(Board b)
         {
             short pawnCountWhite = 0, pawnCountBlack = 0;
             short bishopCountWhite = 0, bishopCountBlack = 0;
@@ -136,7 +136,7 @@ namespace Chess.Engine
                 return score;
         }
 
-        public static int GetPieceValue(byte piece)
+        internal static int GetPieceValue(byte piece)
         {
             if ((piece & (byte)PieceNames.Pawn) != 0)
             {

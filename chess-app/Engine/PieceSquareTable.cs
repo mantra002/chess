@@ -9,7 +9,7 @@ namespace Chess.Engine
 	using Chess.Game;
     static class PieceSquareTable
     {
-		public static int GetTableValue(int[] table, byte square, Enums.Colors colorEvaluating)
+		internal static int GetTableValue(int[] table, byte square, Enums.Colors colorEvaluating)
 		{
 			byte file, rank;
 			if (colorEvaluating == Enums.Colors.Black)
@@ -23,7 +23,7 @@ namespace Chess.Engine
 		}
 		// Values taken from: https://www.chessprogramming.org/Simplified_Evaluation_Function
 
-		public static readonly int[] Pawn = {
+		internal static readonly int[] Pawn = {
 			0,  0,  0,  0,  0,  0,  0,  0,
 			50, 50, 50, 50, 50, 50, 50, 50,
 			10, 10, 20, 30, 30, 20, 10, 10,
@@ -34,7 +34,7 @@ namespace Chess.Engine
 			0,  0,  0,  0,  0,  0,  0,  0
 		};
 
-		public static readonly int[] Knight = {
+		internal static readonly int[] Knight = {
 			-50,-40,-30,-30,-30,-30,-40,-50,
 			-40,-20,  0,  0,  0,  0,-20,-40,
 			-30,  0, 10, 15, 15, 10,  0,-30,
@@ -45,7 +45,7 @@ namespace Chess.Engine
 			-50,-40,-30,-30,-30,-30,-40,-50,
 		};
 
-		public static readonly int[] Bishop = {
+		internal static readonly int[] Bishop = {
 			-20,-10,-10,-10,-10,-10,-10,-20,
 			-10,  0,  0,  0,  0,  0,  0,-10,
 			-10,  0,  5, 10, 10,  5,  0,-10,
@@ -56,7 +56,7 @@ namespace Chess.Engine
 			-20,-10,-10,-10,-10,-10,-10,-20,
 		};
 
-		public static readonly int[] Rook = {
+		internal static readonly int[] Rook = {
 			0,  0,  0,  0,  0,  0,  0,  0,
 			5, 10, 10, 10, 10, 10, 10,  5,
 			-5,  0,  0,  0,  0,  0,  0, -5,
@@ -67,7 +67,7 @@ namespace Chess.Engine
 			0,  0,  0,  5,  5,  0,  0,  0
 		};
 
-		public static readonly int[] Queen = {
+		internal static readonly int[] Queen = {
 			-20,-10,-10, -5, -5,-10,-10,-20,
 			-10,  0,  0,  0,  0,  0,  0,-10,
 			-10,  0,  5,  5,  5,  5,  0,-10,
@@ -78,7 +78,7 @@ namespace Chess.Engine
 			-20,-10,-10, -5, -5,-10,-10,-20
 		};
 
-		public static readonly int[] King = {
+		internal static readonly int[] King = {
 			-30,-40,-40,-50,-50,-40,-40,-30,
 			-30,-40,-40,-50,-50,-40,-40,-30,
 			-30,-40,-40,-50,-50,-40,-40,-30,
@@ -89,7 +89,7 @@ namespace Chess.Engine
 			20, 30, 10,  0,  0, 10, 30, 20
 		};
 
-		public static readonly int[] KingEndgame = {
+		internal static readonly int[] KingEndgame = {
 			-50,-40,-30,-20,-20,-30,-40,-50,
 			-30,-20,-10,  0,  0,-10,-20,-30,
 			-30,-10, 20, 30, 30, 20,-10,-30,

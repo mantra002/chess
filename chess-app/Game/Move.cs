@@ -9,15 +9,15 @@ namespace Chess.Game
     using static Enums;
     public class Move : IComparable<Move>
     {
-        public byte Piece;
-        public int PieceListIndex;
-        public byte PieceCaptured;
-        public byte Origin;
-        public byte Destination;
-        public bool CaptureEnPassant;
-        public byte PromoteIntoPiece;
-        public int MoveScore = 999999999;
-        public int MoveHash
+        internal byte Piece;
+        internal int PieceListIndex;
+        internal byte PieceCaptured;
+        internal byte Origin;
+        internal byte Destination;
+        internal bool CaptureEnPassant;
+        internal byte PromoteIntoPiece;
+        internal int MoveScore = 999999999;
+        internal int MoveHash
         {
             get
             {
@@ -25,11 +25,11 @@ namespace Chess.Game
             }
         }
 
-        public CastleFlags CastleFlags;
-        public Colors SideToMove;
-        public Squares AllowsEnPassantTarget;
+        internal CastleFlags CastleFlags;
+        internal Colors SideToMove;
+        internal Squares AllowsEnPassantTarget;
 
-        public Move(Colors sideToPlay, byte piece, byte origin, byte destination, int pieceListIndex = -1, byte pieceCaptured = 0, CastleFlags castleFlag = CastleFlags.None, Squares allowsEnPassantTarget = Squares.None, byte promoteIntoPiece = 0)
+        internal Move(Colors sideToPlay, byte piece, byte origin, byte destination, int pieceListIndex = -1, byte pieceCaptured = 0, CastleFlags castleFlag = CastleFlags.None, Squares allowsEnPassantTarget = Squares.None, byte promoteIntoPiece = 0)
         {
             Piece = piece;
             Origin = origin;
@@ -45,7 +45,7 @@ namespace Chess.Game
             CaptureEnPassant = false;
         }
 
-        public int SortByNameAscending(string name1, string name2)
+        internal int SortByNameAscending(string name1, string name2)
         {
 
             return name1.CompareTo(name2);
@@ -63,7 +63,7 @@ namespace Chess.Game
 
             else return this.MoveScore.CompareTo(compareMove.MoveScore);
         }
-        public Move(string move, Board b)
+        internal Move(string move, Board b)
         {
             move = move.Trim();
             SideToMove = b.ColorToMove;
@@ -160,7 +160,7 @@ namespace Chess.Game
 
 
         }
-        public static (byte, byte) GetSquaresFromString(string move, Board b)
+        internal static (byte, byte) GetSquaresFromString(string move, Board b)
         {
 
             string origin = move.Substring(0, 2);

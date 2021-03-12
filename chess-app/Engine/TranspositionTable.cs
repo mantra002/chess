@@ -11,15 +11,15 @@ using Chess.Game;
 namespace Chess.Engine
 {
 
-    public class TranspositionTable
+    internal class TranspositionTable
     {
         Position[] tt;
-        public uint TableSizeInMb;
+        internal uint TableSizeInMb;
         readonly ulong TableSizeInPositions;
         ulong TtEntries = 0;
-        public double PercentFull { get { return TtEntries / (double)TableSizeInPositions; } }
+        internal double PercentFull { get { return TtEntries / (double)TableSizeInPositions; } }
 
-        public TranspositionTable(uint sizeInMb = 64)
+        internal TranspositionTable(uint sizeInMb = 64)
         {
             TableSizeInMb = sizeInMb;
             TableSizeInPositions = (ulong)sizeInMb * 1000000 / (ulong)(Position.GetSize());
@@ -29,7 +29,7 @@ namespace Chess.Engine
 #endif 
         }
 
-        public void ClearTable()
+        internal void ClearTable()
         {
             tt = new Position[TableSizeInPositions];
         }
@@ -38,7 +38,7 @@ namespace Chess.Engine
             return (int)(hashKey % TableSizeInPositions);
         }
 
-        public Position LookupPosition(ulong hashKey)
+        internal Position LookupPosition(ulong hashKey)
         {
             Position p = (Position)tt[GetTTIndex(hashKey)];
             if (p != null && p.HashKey == hashKey)
@@ -47,7 +47,7 @@ namespace Chess.Engine
                 return p; }
             return null;
         }
-        public void AddPosition(ulong key, int score, Move movePlayed, byte depth, byte plyFromRoot, NodeType nt)
+        internal void AddPosition(ulong key, int score, Move movePlayed, byte depth, byte plyFromRoot, NodeType nt)
         {
             //Console.WriteLine($"Saving position with key {key} at index {GetTTIndex(key)}");
             Position p = new Position(key, score, movePlayed, depth, plyFromRoot, nt);
@@ -72,7 +72,7 @@ namespace Chess.Engine
             }
             return score;
         }
-        public enum NodeType
+        internal enum NodeType
         {
             Exact,
             Beta,
@@ -80,16 +80,16 @@ namespace Chess.Engine
         }
     
         [StructLayout(LayoutKind.Sequential)]
-        public class Position
+        internal class Position
         {
-            public readonly ulong HashKey;
-            public int Score;
-            public readonly Move MovePlayed;
-            public readonly byte Depth;
-            public readonly NodeType NType;
+            internal readonly ulong HashKey;
+            internal int Score;
+            internal readonly Move MovePlayed;
+            internal readonly byte Depth;
+            internal readonly NodeType NType;
 
 
-            public Position(ulong hk, int score, Move movePlayed, byte depth, byte plyFromRoot, NodeType nt)
+            internal Position(ulong hk, int score, Move movePlayed, byte depth, byte plyFromRoot, NodeType nt)
             {
                 this.HashKey = hk;
                 this.MovePlayed = movePlayed;
@@ -97,12 +97,12 @@ namespace Chess.Engine
                 this.NType = nt;
                 this.Score = AdjustedScoreIntoTT(score, plyFromRoot);
             }
-            public static int GetSize()
+            internal static int GetSize()
             {
                 return System.Runtime.InteropServices.Marshal.SizeOf<Position>();
             }
 
-            public int GetScore(byte plyFromRoot)
+            internal int GetScore(byte plyFromRoot)
             {
                 return AdjustedScoreOutOfTT(this.Score, plyFromRoot);
             }

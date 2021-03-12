@@ -8,15 +8,15 @@ using System.Threading.Tasks;
 namespace Chess.Game
 {
     using static Enums;
-    public static class MoveGeneration
+    internal static class MoveGeneration
     {
-        public enum promotionAllowed
+        internal enum promotionAllowed
         {
             All,
             QueenOrKnight,
             QueenOnly
         }
-        public static List<Move> GenerateLegalMoves(Board b, bool includeQuietMoves = true, promotionAllowed promo = promotionAllowed.All)
+        internal static List<Move> GenerateLegalMoves(Board b, bool includeQuietMoves = true, promotionAllowed promo = promotionAllowed.All)
         {
             List<Move> candidateMoves = new List<Move>();
             byte decodePiece;
@@ -325,8 +325,6 @@ namespace Chess.Game
             //Need to add the sign back in from the subtraction.
             if (distance < 0) direction = (short)-direction;
 
-
-
             return true;
         }
 
@@ -338,7 +336,8 @@ namespace Chess.Game
             if (result) b.InCheck = true;
             return result;
         }
-        public static (List<ushort>[], List<ushort>[]) GenerateAttackMap(Board b, Colors sideToGenerateAttacksFor = 0)
+
+        internal static (List<ushort>[], List<ushort>[]) GenerateAttackMap(Board b, Colors sideToGenerateAttacksFor = 0)
         {
             Colors side;
             byte decodePiece;
@@ -625,6 +624,7 @@ namespace Chess.Game
             }
             return false;
         }
+
         private static List<Move> GenerateMoves(Board b, byte origin, short[] availibleMoves, int plIndex = -1, bool includeCaptures = true, bool includeQuietMoves = true, bool canBePinned = true, bool allowMoveIntoCheck = true, bool isPawn = false, promotionAllowed promo = promotionAllowed.All)
         {
             byte destinationPiece;

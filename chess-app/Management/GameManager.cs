@@ -13,10 +13,9 @@ namespace Chess.Management
     public class GameManager
     {
         public Board Board;
-        public Search AbSearch;
-        public OpeningBook<string> OpeningBk;
-        public Random r;
-        public SearchSettings SearchSet = new SearchSettings();
+        internal Search AbSearch;
+        internal Random r;
+        internal SearchSettings SearchSet = new SearchSettings();
         Thread search;
 
         public GameManager(string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") : this(new Board(fen))

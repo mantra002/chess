@@ -6,22 +6,22 @@ using System.Threading.Tasks;
 
 namespace Chess.Game
 {
-    static public class Pieces
+    static internal class Pieces
     {
         
 
-        public struct Piece 
+        internal struct Piece 
         {
-            public Enums.Colors Color;
-            public Enums.PieceNames Name;
+            internal Enums.Colors Color;
+            internal Enums.PieceNames Name;
         }
 
-        static public byte EncodePiece(Enums.PieceNames n, Enums.Colors c)
+        static internal byte EncodePiece(Enums.PieceNames n, Enums.Colors c)
         {
             return (byte)((byte)n | (byte)c);
         }
 
-        static public Piece DecodePiece(byte p)
+        static internal Piece DecodePiece(byte p)
         {
             Piece np = new Piece();
             if((p & (byte)Enums.Colors.White) == (byte)Enums.Colors.White)
@@ -37,7 +37,7 @@ namespace Chess.Game
             return np;
         }
 
-        static public Enums.PieceNames DecodePieceName(byte p)
+        static internal Enums.PieceNames DecodePieceName(byte p)
         {
             if ((p & (byte)Enums.PieceNames.Pawn) != 0)
             { 
@@ -65,7 +65,7 @@ namespace Chess.Game
             }
         }
 
-        static public char DecodePieceToChar(Piece p)
+        static internal char DecodePieceToChar(Piece p)
         {
             char c;
             if (p.Color == Enums.Colors.White)
@@ -125,12 +125,12 @@ namespace Chess.Game
             return c;
         }
 
-        static public char DecodePieceToChar(byte p)
+        static internal char DecodePieceToChar(byte p)
         {
             return DecodePieceToChar(DecodePiece(p));
         }
 
-        static public byte EncodePieceFromChar(char c)
+        static internal byte EncodePieceFromChar(char c)
         {
             byte b = 0;
 

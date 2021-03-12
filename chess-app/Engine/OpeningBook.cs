@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Chess.Engine
 {
-    public class OpeningBook<T>
+    internal class OpeningBook<T>
     {
         //Book from https://sites.google.com/site/computerschess/balsa-opening-test-suite
 
@@ -15,12 +15,12 @@ namespace Chess.Engine
         private string move;
 
 
-        public OpeningBook(string move)
+        internal OpeningBook(string move)
         {
             this.move = move;
             this.openingMoves = new List<OpeningBook<string>>();
         }
-        public static OpeningBook<string> InitializeOpeningBook(string location = "Engine\\data\\opening-db.dat")
+        internal static OpeningBook<string> InitializeOpeningBook(string location = "Engine\\data\\opening-db.dat")
         {
             OpeningBook<string> root = new OpeningBook<string>("*");
 
@@ -68,7 +68,7 @@ namespace Chess.Engine
             return root;
         }
 
-        public OpeningBook<string> GetChildList(string parentMove)
+        internal OpeningBook<string> GetChildList(string parentMove)
         {
             foreach(OpeningBook<string> ob in this.openingMoves)
             {
@@ -78,7 +78,7 @@ namespace Chess.Engine
             return null;
         }
 
-        public List<string> ListAllChildren()
+        internal List<string> ListAllChildren()
         {
             List<string> children = new List<string>();
             foreach (OpeningBook<string> ob in this.openingMoves)
@@ -88,7 +88,7 @@ namespace Chess.Engine
             }
             return children;
         }
-        public void AddChildList(string childMove)
+        internal void AddChildList(string childMove)
         {
             openingMoves.Add(new OpeningBook<string>(childMove));
         }

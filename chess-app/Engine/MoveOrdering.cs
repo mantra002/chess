@@ -9,9 +9,9 @@ using Chess.Game;
 namespace Chess.Engine
 {
     using static Enums;
-    static public class MoveOrdering
+    static internal class MoveOrdering
     {
-        public static void OrderMoves(Board b, TranspositionTable tt, List<Move> moves, bool UseSEE = false)
+        internal static void OrderMoves(Board b, TranspositionTable tt, List<Move> moves, bool UseSEE = false)
         {
             int score;
 
@@ -46,7 +46,7 @@ namespace Chess.Engine
             moves.Sort();
         }
 
-        public static int StaticExchangeEvaluation(Board b, Move m, int attackingPieceValue = 0)
+        internal static int StaticExchangeEvaluation(Board b, Move m, int attackingPieceValue = 0)
         {
             int score = Evaluation.GetPieceValue(m.PieceCaptured);
             int currentDefenderScore = 0;

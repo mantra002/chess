@@ -20,7 +20,6 @@ namespace Chess.Game
         public List<ushort> PieceList = new List<ushort>(); //Formmatted as 0bLLLLLLLLPPPPPPCC L = Location; P = Piece; C = Color
         public Stack<GameState> GameHistory = new Stack<GameState>();
         public List<ushort>[][] AttackedSquares = new List<ushort>[2][];
-        public List<ushort>[][] AttackedSquaresWithoutPins = new List<ushort>[2][];
         public byte[] KingSquares = new byte[2];
         public ulong ZobristHash;
 
@@ -29,15 +28,11 @@ namespace Chess.Game
 
         public struct GameState
         {
-            public List<ushort>[][] AttackedSquares;
-            public List<ushort>[][] AttackedSquaresWithoutPins;
             public Move PlayedMove;
             public byte CastleMask;
 
-            public GameState(List<ushort>[][] atksq, List<ushort>[][] aswp, Move m, byte cm)
+            public GameState(Move m, byte cm)
             {
-                this.AttackedSquares = atksq;
-                this.AttackedSquaresWithoutPins = aswp;
                 this.PlayedMove = m;
                 this.CastleMask = cm;
             }
@@ -128,7 +123,7 @@ namespace Chess.Game
         public void PlayMove(Move move)
         {
             if (CheckMate) return;
-            GameHistory.Push(new GameState(this.AttackedSquares, this.AttackedSquaresWithoutPins, move, this.CastleMask));
+            GameHistory.Push(new GameState(move, this.CastleMask));
 
             ZobristHash ^= Game.ZobristHash.CastleKeys[CastleMask];
             if (this.EnPassantTarget != Squares.None) ZobristHash ^= Game.ZobristHash.EpKeys[(byte)this.EnPassantTarget];
@@ -458,9 +453,9 @@ namespace Chess.Game
                 this.MoveCounter = (short)(short.Parse(splitFen[5].Trim()) * 2);
             }
 
-            (this.AttackedSquares[0], this.AttackedSquaresWithoutPins[0]) = MoveGeneration.GenerateAttackMap(this, Colors.Black);
-            (this.AttackedSquares[1], this.AttackedSquaresWithoutPins[1]) = MoveGeneration.GenerateAttackMap(this, Colors.White);
-            (this.AttackedSquares[0], this.AttackedSquaresWithoutPins[0]) = MoveGeneration.GenerateAttackMap(this, Colors.Black);
+            this.AttackedSquares[0] = MoveGeneration.GenerateAttackMap(this, Colors.Black);
+            this.AttackedSquares[1] = MoveGeneration.GenerateAttackMap(this, Colors.White);
+            this.AttackedSquares[0] = MoveGeneration.GenerateAttackMap(this, Colors.Black);
 
             if (splitFen[1].Trim() == "w")
             {

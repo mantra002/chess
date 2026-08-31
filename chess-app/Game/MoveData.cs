@@ -197,10 +197,12 @@ namespace Chess.Game
         public static short[] GenerateSlidingMoves(FakeMoveDirections[] moves, short square, Board b = null, short considerSquaresEmpty1 = -1, short considerSquaresEmpty2 = -1)
         {
             square = ConvertRealSquareToDummyBoard(square);
-            List<short> availibleMoves = new List<short>();
+            //Max reachable squares for a queen from any origin is 27; buffer avoids per-call List<T> allocation/growth.
+            Span<short> availibleMoves = stackalloc short[32];
+            int count = 0;
             short resultDummySquare;
             short destinationPiece;
-            short realSquare=0;
+            short realSquare;
 
             foreach (FakeMoveDirections moveOffset in moves)
             {
@@ -211,17 +213,17 @@ namespace Chess.Game
                     if(b != null)
                     {
                         destinationPiece = b.GameBoard[realSquare];
-                        availibleMoves.Add(realSquare);
+                        availibleMoves[count++] = realSquare;
                         if (destinationPiece != 0 && (realSquare != considerSquaresEmpty1 && realSquare != considerSquaresEmpty2)) break;
                     }
                     else
                     {
-                        availibleMoves.Add(realSquare);
+                        availibleMoves[count++] = realSquare;
                     }
                     resultDummySquare = (short)(resultDummySquare + (short)moveOffset);
                 }
             }
-            return availibleMoves.ToArray();
+            return availibleMoves.Slice(0, count).ToArray();
         }
     }
 }

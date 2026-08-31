@@ -18,15 +18,15 @@ namespace Chess.Game
         }
         public static List<Move> GenerateLegalMoves(Board b, bool includeQuietMoves = true, promotionAllowed promo = promotionAllowed.All)
         {
-            List<Move> candidateMoves = new List<Move>();
+            List<Move> candidateMoves = new List<Move>(64);
             byte decodePiece;
             byte decodeLocation;
-            int numberOfPieces = b.PieceList.Count();
+            int numberOfPieces = b.PieceList.Count;
             short[] pawnMoves;
 
             if (b.ColorToMove == Colors.White)
             {
-                (b.AttackedSquares[0], b.AttackedSquaresWithoutPins[0]) = MoveGeneration.GenerateAttackMap(b, Colors.Black);
+                b.AttackedSquares[0] = MoveGeneration.GenerateAttackMap(b, Colors.Black);
 
                 if (WhiteCastleIsValid(b, CastleFlags.WhiteShortCastle))
                 {
@@ -39,7 +39,7 @@ namespace Chess.Game
             }
             else
             {
-                (b.AttackedSquares[1], b.AttackedSquaresWithoutPins[1]) = MoveGeneration.GenerateAttackMap(b, Colors.White);
+                b.AttackedSquares[1] = MoveGeneration.GenerateAttackMap(b, Colors.White);
                 if (BlackCastleIsValid(b, CastleFlags.BlackShortCastle))
                 {
                     candidateMoves.Add(new Move(b.ColorToMove, 0, 0, 0, 0, castleFlag: CastleFlags.BlackShortCastle));
@@ -52,7 +52,7 @@ namespace Chess.Game
             if (CheckForCheck(b))
             {
                 candidateMoves = GenerateCheckEvasion(b, promo);
-                if (candidateMoves.Count() == 0) b.CheckMate = true;
+                if (candidateMoves.Count == 0) b.CheckMate = true;
                 return candidateMoves;
             }
 
@@ -72,41 +72,41 @@ namespace Chess.Game
                         pawnMoves = MoveData.AvailiblePawnMovesWhite[decodeLocation];
                         if (Board.GetRank((byte)decodeLocation) == 2 && b.GameBoard[decodeLocation - 8] == 0)
                         {
-                            pawnMoves = pawnMoves.Concat(new short[] { (short)(decodeLocation - 16) }).ToArray();
+                            pawnMoves = AppendSquare(pawnMoves, (short)(decodeLocation - 16));
                         }
 
-                        candidateMoves.AddRange(GenerateMoves(b, decodeLocation, MoveData.AvailiblePawnAttacksWhite[decodeLocation], index, true, false, isPawn: true));
-                        candidateMoves.AddRange(GenerateMoves(b, decodeLocation, pawnMoves, index, false, includeQuietMoves: includeQuietMoves, isPawn: true, promo: promo));
+                        GenerateMoves(b, decodeLocation, MoveData.AvailiblePawnAttacksWhite[decodeLocation], candidateMoves, index, true, false, isPawn: true);
+                        GenerateMoves(b, decodeLocation, pawnMoves, candidateMoves, index, false, includeQuietMoves: includeQuietMoves, isPawn: true, promo: promo);
                     }
                     else if ((decodePiece & (byte)PieceNames.Pawn) == (byte)PieceNames.Pawn && b.ColorToMove == Colors.Black)
                     {
                         pawnMoves = MoveData.AvailiblePawnMovesBlack[decodeLocation];
                         if (Board.GetRank((byte)decodeLocation) == 7 && b.GameBoard[decodeLocation + 8] == 0)
                         {
-                            pawnMoves = pawnMoves.Concat(new short[] { (short)(decodeLocation + 16) }).ToArray();
+                            pawnMoves = AppendSquare(pawnMoves, (short)(decodeLocation + 16));
                         }
-                        candidateMoves.AddRange(GenerateMoves(b, decodeLocation, MoveData.AvailiblePawnAttacksBlack[decodeLocation], index, true, false, isPawn: true));
-                        candidateMoves.AddRange(GenerateMoves(b, decodeLocation, pawnMoves, index, false, includeQuietMoves: includeQuietMoves, isPawn: true));
+                        GenerateMoves(b, decodeLocation, MoveData.AvailiblePawnAttacksBlack[decodeLocation], candidateMoves, index, true, false, isPawn: true);
+                        GenerateMoves(b, decodeLocation, pawnMoves, candidateMoves, index, false, includeQuietMoves: includeQuietMoves, isPawn: true);
                     }
                     else if ((decodePiece & (byte)PieceNames.Knight) == (byte)PieceNames.Knight)
                     {
-                        candidateMoves.AddRange(GenerateMoves(b, decodeLocation, MoveData.AvailibleKnightMoves[decodeLocation], index, includeQuietMoves: includeQuietMoves));
+                        GenerateMoves(b, decodeLocation, MoveData.AvailibleKnightMoves[decodeLocation], candidateMoves, index, includeQuietMoves: includeQuietMoves);
                     }
                     else if ((decodePiece & (byte)PieceNames.King) == (byte)PieceNames.King)
                     {
-                        candidateMoves.AddRange(GenerateMoves(b, decodeLocation, MoveData.AvailibleKingMoves[decodeLocation], index, allowMoveIntoCheck: false, canBePinned: false, includeQuietMoves: includeQuietMoves));
+                        GenerateMoves(b, decodeLocation, MoveData.AvailibleKingMoves[decodeLocation], candidateMoves, index, allowMoveIntoCheck: false, canBePinned: false, includeQuietMoves: includeQuietMoves);
                     }
                     else if ((decodePiece & (byte)PieceNames.Queen) == (byte)PieceNames.Queen)
                     {
-                        candidateMoves.AddRange(GenerateMoves(b, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FQueenMoves, decodeLocation, b), index, includeQuietMoves: includeQuietMoves));
+                        GenerateMoves(b, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FQueenMoves, decodeLocation, b), candidateMoves, index, includeQuietMoves: includeQuietMoves);
                     }
                     else if ((decodePiece & (byte)PieceNames.Bishop) == (byte)PieceNames.Bishop)
                     {
-                        candidateMoves.AddRange(GenerateMoves(b, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FBishopMoves, decodeLocation, b), index, includeQuietMoves: includeQuietMoves));
+                        GenerateMoves(b, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FBishopMoves, decodeLocation, b), candidateMoves, index, includeQuietMoves: includeQuietMoves);
                     }
                     else if ((decodePiece & (byte)PieceNames.Rook) == (byte)PieceNames.Rook)
                     {
-                        candidateMoves.AddRange(GenerateMoves(b, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FRookMoves, decodeLocation, b), index, includeQuietMoves: includeQuietMoves));
+                        GenerateMoves(b, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FRookMoves, decodeLocation, b), candidateMoves, index, includeQuietMoves: includeQuietMoves);
                     }
                     else
                     {
@@ -116,32 +116,39 @@ namespace Chess.Game
             }
             return candidateMoves;
         }
+        private static short[] AppendSquare(short[] moves, short extra)
+        {
+            short[] extended = new short[moves.Length + 1];
+            Array.Copy(moves, extended, moves.Length);
+            extended[moves.Length] = extra;
+            return extended;
+        }
         private static List<Move> GenerateCheckEvasion(Board b, promotionAllowed promo = promotionAllowed.All)
         {
             byte opponentColor = (byte)(2 - (byte)b.ColorToMove);
             byte kingSquare = b.KingSquares[(byte)b.ColorToMove - 1];
-            List<Move> candidateMoves = new List<Move>(64);
+            List<Move> candidateMoves = new List<Move>(32);
             Move m;
             byte decodeDefender, decodeDefenderPos;
             byte decodePiecePl, decodeLocationPl;
 
             candidateMoves.AddRange(GenerateMoves(b, kingSquare, MoveData.AvailibleKingMoves[kingSquare], canBePinned: false, allowMoveIntoCheck: false));
 
-            List<ushort> piecesAttacking = b.AttackedSquaresWithoutPins[opponentColor][kingSquare];
+            List<ushort> piecesAttacking = b.AttackedSquares[opponentColor][kingSquare];
 
             //No need to go further if it's a double check, the king MUST move.
-            if (piecesAttacking.Count() > 1) return candidateMoves;
+            if (piecesAttacking.Count > 1) return candidateMoves;
 
             byte decodePiece = Board.DecodePieceFromPieceList(piecesAttacking[0]);
             byte decodeLocation = Board.DecodeLocationFromPieceList(piecesAttacking[0]);
 
-            (b.AttackedSquares[(byte)b.ColorToMove - 1], b.AttackedSquaresWithoutPins[(byte)b.ColorToMove - 1]) = MoveGeneration.GenerateAttackMap(b, b.ColorToMove);
+            b.AttackedSquares[(byte)b.ColorToMove - 1] = MoveGeneration.GenerateAttackMap(b, b.ColorToMove);
 
             //Try to generate blocking moves if it's not attacked by a Knight or pawn.
             if (((decodePiece & (byte)PieceNames.Knight) != (byte)PieceNames.Knight) && ((decodePiece & (byte)PieceNames.Pawn) != (byte)PieceNames.Pawn))
             {
                 List<byte> blockingSquares = FindBlockingSquares(piecesAttacking[0], kingSquare);
-                int numberOfPieces = b.PieceList.Count();
+                int numberOfPieces = b.PieceList.Count;
 
                 foreach (byte bSquare in blockingSquares)
                 {
@@ -175,7 +182,7 @@ namespace Chess.Game
                                 pawnMoves = MoveData.AvailiblePawnMovesWhite[decodeLocationPl];
                                 if (Board.GetRank((byte)decodeLocationPl) == 2 && b.GameBoard[decodeLocationPl - 8] == 0)
                                 {
-                                    pawnMoves = pawnMoves.Concat(new short[] { (short)(decodeLocationPl - 16) }).ToArray();
+                                    pawnMoves = AppendSquare(pawnMoves, (short)(decodeLocationPl - 16));
                                 }
                                 if (pawnMoves.Contains(bSquare))
                                 {
@@ -191,7 +198,7 @@ namespace Chess.Game
                                 pawnMoves = MoveData.AvailiblePawnMovesBlack[decodeLocationPl];
                                 if (Board.GetRank((byte)decodeLocationPl) == 7 && b.GameBoard[decodeLocationPl + 8] == 0)
                                 {
-                                    pawnMoves = pawnMoves.Concat(new short[] { (short)(decodeLocationPl + 16) }).ToArray();
+                                    pawnMoves = AppendSquare(pawnMoves, (short)(decodeLocationPl + 16));
                                 }
                                 if (pawnMoves.Contains(bSquare))
                                 {
@@ -229,7 +236,7 @@ namespace Chess.Game
                             {
                                 for (int i = 1; i < 5; i++)
                                 {
-                                    m = new Move(b.ColorToMove, decodeDefender, decodeDefenderPos, decodeLocation, pieceCaptured: decodePiece, promoteIntoPiece: (byte)((byte)(2 * Math.Pow(2, i)) | (byte)b.ColorToMove));
+                                    m = new Move(b.ColorToMove, decodeDefender, decodeDefenderPos, decodeLocation, pieceCaptured: decodePiece, promoteIntoPiece: (byte)((byte)(1 << (i + 1)) | (byte)b.ColorToMove));
                                     candidateMoves.Add(m);
                                 }
                             }
@@ -334,18 +341,16 @@ namespace Chess.Game
         {
             int ksIndex = (byte)b.ColorToMove - 1;
             int asIndex = 2 - (byte)b.ColorToMove;
-            bool result = (b.AttackedSquaresWithoutPins[asIndex][b.KingSquares[ksIndex]] != null);
+            bool result = (b.AttackedSquares[asIndex][b.KingSquares[ksIndex]] != null);
             if (result) b.InCheck = true;
             return result;
         }
-        public static (List<ushort>[], List<ushort>[]) GenerateAttackMap(Board b, Colors sideToGenerateAttacksFor = 0)
+        public static List<ushort>[] GenerateAttackMap(Board b, Colors sideToGenerateAttacksFor = 0)
         {
             Colors side;
             byte decodePiece;
             byte decodeLocation;
             List<ushort>[] attackMap = new List<ushort>[64];
-            List<ushort>[] attackMapWithoutPins = new List<ushort>[64];
-
 
             if (sideToGenerateAttacksFor == 0) side = b.ColorToMove;
             else side = sideToGenerateAttacksFor;
@@ -364,31 +369,31 @@ namespace Chess.Game
 
                     if ((decodePiece & (byte)PieceNames.Pawn) == (byte)PieceNames.Pawn && side == Colors.White)
                     {
-                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.AvailiblePawnAttacksWhite[decodeLocation], ref attackMap, ref attackMapWithoutPins);
+                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.AvailiblePawnAttacksWhite[decodeLocation], ref attackMap);
                     }
                     else if ((decodePiece & (byte)PieceNames.Pawn) == (byte)PieceNames.Pawn && side == Colors.Black)
                     {
-                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.AvailiblePawnAttacksBlack[decodeLocation], ref attackMap, ref attackMapWithoutPins);
+                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.AvailiblePawnAttacksBlack[decodeLocation], ref attackMap);
                     }
                     else if ((decodePiece & (byte)PieceNames.Knight) == (byte)PieceNames.Knight)
                     {
-                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.AvailibleKnightMoves[decodeLocation], ref attackMap, ref attackMapWithoutPins);
+                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.AvailibleKnightMoves[decodeLocation], ref attackMap);
                     }
                     else if ((decodePiece & (byte)PieceNames.Bishop) == (byte)PieceNames.Bishop)
                     {
-                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FBishopMoves, decodeLocation, b, kingSquare), ref attackMap, ref attackMapWithoutPins);
+                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FBishopMoves, decodeLocation, b, kingSquare), ref attackMap);
                     }
                     else if ((decodePiece & (byte)PieceNames.Rook) == (byte)PieceNames.Rook)
                     {
-                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FRookMoves, decodeLocation, b, kingSquare), ref attackMap, ref attackMapWithoutPins);
+                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FRookMoves, decodeLocation, b, kingSquare), ref attackMap);
                     }
                     else if ((decodePiece & (byte)PieceNames.Queen) == (byte)PieceNames.Queen)
                     {
-                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FQueenMoves, decodeLocation, b, kingSquare), ref attackMap, ref attackMapWithoutPins);
+                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.GenerateSlidingMoves(MoveData.FQueenMoves, decodeLocation, b, kingSquare), ref attackMap);
                     }
                     else if ((decodePiece & (byte)PieceNames.King) == (byte)PieceNames.King)
                     {
-                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.AvailibleKingMoves[decodeLocation], ref attackMap, ref attackMapWithoutPins, allowMoveIntoCheck: false, canBePinned: false);
+                        GenerateAttacks(b, side, decodePiece, decodeLocation, MoveData.AvailibleKingMoves[decodeLocation], ref attackMap, allowMoveIntoCheck: false);
                     }
                     else
                     {
@@ -396,7 +401,7 @@ namespace Chess.Game
                     }
                 }
             }
-            return (attackMap, attackMapWithoutPins);
+            return attackMap;
         }
 
         private static bool WhiteCastleIsValid(Board b, CastleFlags castellingTypes)
@@ -405,14 +410,14 @@ namespace Chess.Game
             {
                 if (castellingTypes == CastleFlags.WhiteShortCastle)
                 {
-                    if (b.GameBoard[(byte)Squares.f1] == 0 && b.GameBoard[(byte)Squares.g1] == 0 && b.AttackedSquaresWithoutPins[0][(byte)Squares.f1] == null && b.AttackedSquaresWithoutPins[0][(byte)Squares.g1] == null && b.GameBoard[(byte)Squares.h1] == ((byte)PieceNames.Rook | (byte)Colors.White))
+                    if (b.GameBoard[(byte)Squares.f1] == 0 && b.GameBoard[(byte)Squares.g1] == 0 && b.AttackedSquares[0][(byte)Squares.f1] == null && b.AttackedSquares[0][(byte)Squares.g1] == null && b.GameBoard[(byte)Squares.h1] == ((byte)PieceNames.Rook | (byte)Colors.White))
                     {
                         return true;
                     }
                 }
                 else
                 {
-                    if (b.GameBoard[(byte)Squares.d1] == 0 && b.GameBoard[(byte)Squares.c1] == 0 && b.GameBoard[(byte)Squares.b1] == 0 && b.AttackedSquaresWithoutPins[0][(byte)Squares.c1] == null && b.AttackedSquaresWithoutPins[0][(byte)Squares.d1] == null && b.GameBoard[(byte)Squares.a1] == ((byte)PieceNames.Rook | (byte)Colors.White))
+                    if (b.GameBoard[(byte)Squares.d1] == 0 && b.GameBoard[(byte)Squares.c1] == 0 && b.GameBoard[(byte)Squares.b1] == 0 && b.AttackedSquares[0][(byte)Squares.c1] == null && b.AttackedSquares[0][(byte)Squares.d1] == null && b.GameBoard[(byte)Squares.a1] == ((byte)PieceNames.Rook | (byte)Colors.White))
                     {
                         return true;
                     }
@@ -428,14 +433,14 @@ namespace Chess.Game
             {
                 if (castellingTypes == CastleFlags.BlackShortCastle)
                 {
-                    if (b.GameBoard[(byte)Squares.f8] == 0 && b.GameBoard[(byte)Squares.g8] == 0 && b.AttackedSquaresWithoutPins[1][(byte)Squares.f8] == null && b.AttackedSquaresWithoutPins[1][(byte)Squares.g8] == null && b.GameBoard[(byte)Squares.h8] == ((byte)PieceNames.Rook | (byte)Colors.Black))
+                    if (b.GameBoard[(byte)Squares.f8] == 0 && b.GameBoard[(byte)Squares.g8] == 0 && b.AttackedSquares[1][(byte)Squares.f8] == null && b.AttackedSquares[1][(byte)Squares.g8] == null && b.GameBoard[(byte)Squares.h8] == ((byte)PieceNames.Rook | (byte)Colors.Black))
                     {
                         return true;
                     }
                 }
                 else
                 {
-                    if (b.GameBoard[(byte)Squares.d8] == 0 && b.GameBoard[(byte)Squares.c8] == 0 && b.GameBoard[(byte)Squares.b8] == 0 && b.AttackedSquaresWithoutPins[1][(byte)Squares.d8] == null && b.AttackedSquaresWithoutPins[1][(byte)Squares.c8] == null && b.GameBoard[(byte)Squares.a8] == ((byte)PieceNames.Rook | (byte)Colors.Black))
+                    if (b.GameBoard[(byte)Squares.d8] == 0 && b.GameBoard[(byte)Squares.c8] == 0 && b.GameBoard[(byte)Squares.b8] == 0 && b.AttackedSquares[1][(byte)Squares.d8] == null && b.AttackedSquares[1][(byte)Squares.c8] == null && b.GameBoard[(byte)Squares.a8] == ((byte)PieceNames.Rook | (byte)Colors.Black))
                     {
                         return true;
                     }
@@ -444,32 +449,20 @@ namespace Chess.Game
             return false;
         }
 
-        private static void GenerateAttacks(Board b, Colors c, byte decodePiece, byte origin, short[] availibleMoves, ref List<ushort>[] attackMaps, ref List<ushort>[] attackMapWithoutPin, bool allowMoveIntoCheck = true, bool canBePinned = true)
+        private static void GenerateAttacks(Board b, Colors c, byte decodePiece, byte origin, short[] availibleMoves, ref List<ushort>[] attackMaps, bool allowMoveIntoCheck = true)
         {
-            byte destinationPiece;
             //This is a hacky way to avoid accessing an attack map that hasn't been generated yet.
             if (b.AttackedSquares[2 - (byte)c] == null) allowMoveIntoCheck = true;
 
             foreach (byte destination in availibleMoves)
             {
-                if (!allowMoveIntoCheck && b.AttackedSquaresWithoutPins[2 - (byte)c][destination] != null)
+                if (!allowMoveIntoCheck && b.AttackedSquares[2 - (byte)c][destination] != null)
                 {
-                    /*Console.WriteLine("Looking at attacking " + destination + " with " + Pieces.DecodePieceToChar(decodePiece));
-                    Console.WriteLine("Currently attacked by " + Pieces.DecodePieceToChar(Board.DecodePieceFromPieceList(b.AttackedSquares[2 - (byte)c][destination][0])) + " at " + Board.DecodeLocationFromPieceList(b.AttackedSquares[2 - (byte)c][destination][0]));
-                    Console.WriteLine(b.ToString());*/
+                    //Square is already attacked by the opponent, so the king can't move there.
                 }
                 else
                 {
                     ushort encodedPiece = Board.EncodePieceForPieceList(decodePiece, origin);
-                    if (attackMapWithoutPin[destination] == null) attackMapWithoutPin[destination] = new List<ushort>();
-                    attackMapWithoutPin[destination].Add(encodedPiece);
-
-                    if (canBePinned && PinCheckByRay(b, origin, destination, c))
-                    {
-
-                    }
-
-                    destinationPiece = b.GameBoard[destination];
                     if (attackMaps[destination] == null) attackMaps[destination] = new List<ushort>();
                     attackMaps[destination].Add(encodedPiece);
 
@@ -488,13 +481,13 @@ namespace Chess.Game
             short attackingRay;
             short distance;
 
-            if (b.AttackedSquaresWithoutPins[opponentColor] == null) return false;
-            if (b.AttackedSquaresWithoutPins[opponentColor][origin] != null)
+            if (b.AttackedSquares[opponentColor] == null) return false;
+            if (b.AttackedSquares[opponentColor][origin] != null)
             {
                 if (!GetRayInCommon(origin, kingSquare, out rayToKing, out distance)) return false; //The piece isn't on the same ray as the king
                 GetRayInCommon(destination, kingSquare, out desintationRay, out destinationDistance);
                 if (rayToKing == desintationRay) return false; // Verify the move stays on the same ray.
-                foreach (ushort piece in b.AttackedSquaresWithoutPins[opponentColor][origin])
+                foreach (ushort piece in b.AttackedSquares[opponentColor][origin])
                 {
                     possiblePin = false;
                     checkPieceLocation = Board.DecodeLocationFromPieceList(piece);
@@ -551,10 +544,10 @@ namespace Chess.Game
             if (b.ColorToMove == Colors.White) epSquare += 8;
             else epSquare -= 8;
 
-            if (b.AttackedSquaresWithoutPins[opponentColor] == null) return false;
-            if (b.AttackedSquaresWithoutPins[opponentColor][epSquare] != null)
+            if (b.AttackedSquares[opponentColor] == null) return false;
+            if (b.AttackedSquares[opponentColor][epSquare] != null)
             {
-                foreach (ushort piece in b.AttackedSquaresWithoutPins[opponentColor][epSquare])
+                foreach (ushort piece in b.AttackedSquares[opponentColor][epSquare])
                 {
                     checkPieceLocation = Board.DecodeLocationFromPieceList(piece);
 
@@ -587,10 +580,10 @@ namespace Chess.Game
                     }
                 }
             }
-            if (b.AttackedSquaresWithoutPins[opponentColor] == null) return false;
-            if (b.AttackedSquaresWithoutPins[opponentColor][origin] != null)
+            if (b.AttackedSquares[opponentColor] == null) return false;
+            if (b.AttackedSquares[opponentColor][origin] != null)
             {
-                foreach (ushort piece in b.AttackedSquaresWithoutPins[opponentColor][origin])
+                foreach (ushort piece in b.AttackedSquares[opponentColor][origin])
                 {
                     checkPieceLocation = Board.DecodeLocationFromPieceList(piece);
 
@@ -627,9 +620,15 @@ namespace Chess.Game
         }
         private static List<Move> GenerateMoves(Board b, byte origin, short[] availibleMoves, int plIndex = -1, bool includeCaptures = true, bool includeQuietMoves = true, bool canBePinned = true, bool allowMoveIntoCheck = true, bool isPawn = false, promotionAllowed promo = promotionAllowed.All)
         {
+            List<Move> candidateMoves = new List<Move>();
+            GenerateMoves(b, origin, availibleMoves, candidateMoves, plIndex, includeCaptures, includeQuietMoves, canBePinned, allowMoveIntoCheck, isPawn, promo);
+            return candidateMoves;
+        }
+        //Appends directly into an existing list to avoid a throwaway List allocation per piece in the hot move-generation path.
+        private static void GenerateMoves(Board b, byte origin, short[] availibleMoves, List<Move> candidateMoves, int plIndex = -1, bool includeCaptures = true, bool includeQuietMoves = true, bool canBePinned = true, bool allowMoveIntoCheck = true, bool isPawn = false, promotionAllowed promo = promotionAllowed.All)
+        {
             byte destinationPiece;
             bool alreadyLoggedMoves = false;
-            List<Move> candidateMoves = new List<Move>();
             Move m;
 
 
@@ -661,7 +660,7 @@ namespace Chess.Game
                     }
                     else if (destinationPiece == 0 && includeQuietMoves)
                     {
-                        if (!allowMoveIntoCheck && b.AttackedSquaresWithoutPins[2 - (byte)b.ColorToMove][destination] != null)
+                        if (!allowMoveIntoCheck && b.AttackedSquares[2 - (byte)b.ColorToMove][destination] != null)
                         {
                             //do nothing
                         }
@@ -685,7 +684,7 @@ namespace Chess.Game
                                     {
                                         for (int i = 1; i < 5; i++)
                                         {
-                                            m = new Move(b.ColorToMove, b.GameBoard[origin], origin, destination, plIndex, promoteIntoPiece: (byte)((byte)(2 * Math.Pow(2, i)) | (byte)b.ColorToMove));
+                                            m = new Move(b.ColorToMove, b.GameBoard[origin], origin, destination, plIndex, promoteIntoPiece: (byte)((byte)(1 << (i + 1)) | (byte)b.ColorToMove));
                                             candidateMoves.Add(m);
                                         }
                                     }
@@ -721,7 +720,7 @@ namespace Chess.Game
                                 {
                                     for (int i = 1; i < 5; i++)
                                     {
-                                        m = new Move(b.ColorToMove, b.GameBoard[origin], origin, destination, plIndex, destinationPiece, promoteIntoPiece: (byte)((byte)(2 * Math.Pow(2, i)) | (byte)b.ColorToMove));
+                                        m = new Move(b.ColorToMove, b.GameBoard[origin], origin, destination, plIndex, destinationPiece, promoteIntoPiece: (byte)((byte)(1 << (i + 1)) | (byte)b.ColorToMove));
                                         candidateMoves.Add(m);
                                     }
                                 }
@@ -745,7 +744,6 @@ namespace Chess.Game
                     }
                 }
             }
-            return candidateMoves;
         }
 
     }
